@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product } from "@/services/productService";
 import { fetchSellerById } from "@/services/sellerService";
@@ -147,6 +148,16 @@ const AdminDashboard = () => {
     setCurrentPage(1);
   };
 
+  const handleUsersSort = (field: UserSortField) => {
+    if (usersSortField === field) {
+      setUsersSortDirection(usersSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setUsersSortField(field);
+      setUsersSortDirection('asc');
+    }
+    setUsersCurrentPage(1);
+  };
+
   const sortedProducts = useMemo(() => {
     if (!products) return [];
     
@@ -181,12 +192,46 @@ const AdminDashboard = () => {
     });
   }, [products, sortField, sortDirection, sellers]);
 
+  const sortedUsers = useMemo(() => {
+    if (!users) return [];
+    
+    return [...users].sort((a, b) => {
+      let aValue: any = a[usersSortField];
+      let bValue: any = b[usersSortField];
+      
+      if (usersSortField === 'created_at') {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      } else if (usersSortField === 'roles') {
+        aValue = (aValue || []).join(',');
+        bValue = (bValue || []).join(',');
+        aValue = String(aValue).toLowerCase();
+        bValue = String(bValue).toLowerCase();
+      } else {
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+      
+      if (usersSortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  }, [users, usersSortField, usersSortDirection]);
+
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedProducts, currentPage]);
 
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (usersCurrentPage - 1) * itemsPerPage;
+    return sortedUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedUsers, usersCurrentPage]);
+
   const totalPages = Math.ceil((sortedProducts?.length || 0) / itemsPerPage);
+  const usersTotalPages = Math.ceil((sortedUsers?.length || 0) / itemsPerPage);
 
   const handleApprove = (productId: string) => {
     approveMutation.mutate(productId);
