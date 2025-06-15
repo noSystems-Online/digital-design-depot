@@ -18,7 +18,7 @@ interface ProductGridProps {
 }
 
 const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, category }: ProductGridProps) => {
-  const itemsPerPageNumber = typeof itemsPerPage === 'string' ? parseInt(itemsPerPage, 10) || 8 : Number(itemsPerPage);
+  const itemsPerPageNumber = Number(itemsPerPage) || 8;
   const [displayCount, setDisplayCount] = useState<number>(itemsPerPageNumber);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
