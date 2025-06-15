@@ -81,16 +81,34 @@ const AdminDashboard = () => {
     queryFn: fetchAllProductsForAdmin,
   });
 
-  // Fetch all users
+  // Fetch all users with admin privileges
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      console.log('Fetching all users for admin...');
       
-      if (error) throw error;
+      // Use the service role or admin query to bypass RLS
+      const { data, error } = await supabase
+        .rpc('get_all_users_admin');
+      
+      if (error) {
+        console.error('Error with RPC call, falling back to direct query:', error);
+        // Fallback to direct query if RPC doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (fallbackError) {
+          console.error('Fallback query error:', fallbackError);
+          throw fallbackError;
+        }
+        
+        console.log('Successfully fetched users via fallback:', fallbackData?.length || 0);
+        return fallbackData as UserProfile[];
+      }
+      
+      console.log('Successfully fetched users via RPC:', data?.length || 0);
       return data as UserProfile[];
     },
   });
