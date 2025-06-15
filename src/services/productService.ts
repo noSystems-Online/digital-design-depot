@@ -13,6 +13,7 @@ export interface Product {
   seller_id: string;
   download_url?: string;
   created_at: string;
+  is_active?: boolean;
 }
 
 export const fetchProducts = async (category?: string): Promise<Product[]> => {
@@ -46,7 +47,8 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
-      created_at: product.created_at
+      created_at: product.created_at,
+      is_active: product.is_active,
     }));
   } catch (error) {
     console.error('Error in fetchProducts:', error);
@@ -81,7 +83,8 @@ export const fetchPendingProducts = async (): Promise<Product[]> => {
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
-      created_at: product.created_at
+      created_at: product.created_at,
+      is_active: product.is_active,
     }));
   } catch (error) {
     console.error('Error in fetchPendingProducts:', error);
@@ -115,7 +118,8 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
       category: data.category,
       seller_id: data.seller_id,
       download_url: data.download_url,
-      created_at: data.created_at
+      created_at: data.created_at,
+      is_active: data.is_active,
     };
   } catch (error) {
     console.error('Error in fetchProductById:', error);
@@ -186,5 +190,39 @@ export const createProduct = async (productData: ProductCreationData) => {
   } catch (error) {
     console.error('Error creating product:', error);
     return { success: false, error };
+  }
+};
+
+export const fetchProductsBySeller = async (sellerId: string): Promise<Product[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('seller_id', sellerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching seller products:', error);
+      return [];
+    }
+
+    return data.map(product => ({
+      id: product.id,
+      title: product.title,
+      description: product.description || '',
+      price: parseFloat(product.price.toString()),
+      rating: 4.5,
+      reviews: 0,
+      image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
+      tags: product.tags || [],
+      category: product.category,
+      seller_id: product.seller_id,
+      download_url: product.download_url,
+      created_at: product.created_at,
+      is_active: product.is_active,
+    }));
+  } catch (error) {
+    console.error('Error in fetchProductsBySeller:', error);
+    return [];
   }
 };
