@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -48,9 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        await fetchUserProfile(session.user);
+        // Defer fetching profile to avoid issues inside onAuthStateChange callback
+        setTimeout(() => {
+          fetchUserProfile(session.user);
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setLoading(false);
