@@ -100,7 +100,7 @@ const Register = () => {
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">Create Account</CardTitle>
-              <p className="text-gray-600">Join CodeMarket today</p>
+              <p className="text-gray-600">Join Codigs today</p>
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
