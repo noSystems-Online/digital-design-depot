@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +28,15 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password);
       if (result.success) {
-        navigate("/profile");
+        // Get user data to determine redirect
+        const user = result.user;
+        
+        // Check if user is a seller (either seller only or dual role)
+        if (user?.roles.includes('seller')) {
+          navigate("/seller-dashboard");
+        } else {
+          navigate("/profile");
+        }
       } else {
         setError(result.error || "Login failed");
       }

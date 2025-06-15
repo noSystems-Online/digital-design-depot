@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface User {
@@ -21,7 +20,7 @@ interface AuthContextType {
   isBuyer: boolean;
   isSeller: boolean;
   isSellerApproved: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
   applyToBeSeller: (sellerData: any) => Promise<{ success: boolean; error?: string }>;
 }
@@ -77,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (foundUser) {
       const { password: _, ...userWithoutPassword } = foundUser;
       setUser(userWithoutPassword);
-      return { success: true };
+      return { success: true, user: userWithoutPassword };
     }
     
     return { success: false, error: 'Invalid email or password' };
