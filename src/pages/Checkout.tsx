@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +8,11 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Building } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Checkout = () => {
+  const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState("paypal");
   const [formData, setFormData] = useState({
     email: "",
@@ -21,6 +22,23 @@ const Checkout = () => {
     city: "",
     zipCode: ""
   });
+
+  // Auto-populate form with user data when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      // Split the user's name into first and last name
+      const nameParts = user.name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      setFormData(prev => ({
+        ...prev,
+        email: user.email,
+        firstName: firstName,
+        lastName: lastName
+      }));
+    }
+  }, [user]);
 
   // Mock cart items
   const cartItems = [
