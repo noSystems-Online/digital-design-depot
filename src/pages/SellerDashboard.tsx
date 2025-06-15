@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, DollarSign, Package, TrendingUp, Eye, Edit, Upload, FileText, CheckCircle } from "lucide-react";
+import { Plus, DollarSign, Package, TrendingUp, Upload, FileText, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import ProductDataTable from "@/components/ProductDataTable";
 
 const SellerDashboard = () => {
   const [newProduct, setNewProduct] = useState({
@@ -112,6 +113,12 @@ const SellerDashboard = () => {
       files: null
     });
     setIsEditDialogOpen(true);
+  };
+
+  const handleToggleProductStatus = (product: any) => {
+    console.log("Toggling status for product:", product);
+    // Here you would implement the actual status toggle logic
+    // For now, just log it
   };
 
   return (
@@ -512,34 +519,12 @@ const SellerDashboard = () => {
                   <p className="text-sm text-gray-600">Manage your listed products and track their performance</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {products.map((product) => (
-                      <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{product.title}</h4>
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                            <span>Category: {product.category}</span>
-                            <span>Price: ${product.price}</span>
-                            <span>Sales: {product.sales}</span>
-                            <span>Revenue: ${product.revenue}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={product.status === 'active' ? 'default' : product.status === 'pending' ? 'secondary' : 'destructive'}>
-                            {product.status}
-                          </Badge>
-                          <Button variant="outline" size="sm" onClick={() => openViewDialog(product)}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => openEditDialog(product)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <ProductDataTable
+                    products={products}
+                    onView={openViewDialog}
+                    onEdit={openEditDialog}
+                    onToggleStatus={handleToggleProductStatus}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
