@@ -23,7 +23,7 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
       .select('*')
       .eq('is_active', true);
 
-    if (category) {
+    if (category && (category === 'software' || category === 'templates' || category === 'code-scripts' || category === 'resources')) {
       query = query.eq('category', category);
     }
 
@@ -39,7 +39,7 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
       id: product.id,
       title: product.title,
       description: product.description || '',
-      price: parseFloat(product.price),
+      price: parseFloat(product.price.toString()),
       rating: 4.5, // Default rating since we don't have reviews yet
       reviews: 0, // Default reviews count
       image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
@@ -73,7 +73,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
       id: data.id,
       title: data.title,
       description: data.description || '',
-      price: parseFloat(data.price),
+      price: parseFloat(data.price.toString()),
       rating: 4.5,
       reviews: 0,
       image: data.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
@@ -92,11 +92,12 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
 export const createProduct = async (productData: {
   title: string;
   description: string;
-  category: string;
+  category: 'software' | 'templates' | 'code-scripts' | 'resources';
   price: number;
   image_url?: string;
   download_url?: string;
   tags?: string[];
+  seller_id: string;
 }) => {
   try {
     const { data, error } = await supabase

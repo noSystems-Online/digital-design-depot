@@ -7,7 +7,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  roles: ('buyer' | 'seller')[];
+  roles: ('buyer' | 'seller' | 'admin')[];
   sellerStatus?: 'pending' | 'approved' | 'rejected';
   sellerInfo?: {
     businessName: string;
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
         roles: profile.roles || ['buyer'],
         sellerStatus: profile.seller_status,
-        sellerInfo: profile.seller_info
+        sellerInfo: profile.seller_info as User['sellerInfo']
       };
 
       setUser(userData);
@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update local user state
       setUser({
         ...user,
-        roles: [...user.roles, 'seller'],
+        roles: [...user.roles, 'seller'] as ('buyer' | 'seller' | 'admin')[],
         sellerStatus: 'pending',
         sellerInfo: sellerData
       });
