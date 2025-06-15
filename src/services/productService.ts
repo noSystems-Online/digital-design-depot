@@ -166,8 +166,8 @@ export const createProduct = async (productData: {
   description: string;
   category: 'software' | 'templates' | 'code-scripts' | 'resources';
   price: number;
-  image_url?: string;
-  download_url?: string;
+  image_url: string;
+  download_url: string;
   tags?: string[];
   seller_id: string;
 }) => {
