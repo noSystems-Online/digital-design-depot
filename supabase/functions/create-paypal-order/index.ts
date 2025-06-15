@@ -7,8 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const getPayPalAccessToken = async (environment: string) => {
-  const clientId = 'ARMqjKq6xfR0awtlzCm98pTb8gGyB8A88wfgc_QcP2Yg7b6BNjuLWKYrVCFy5IvZkAqPbzUMXK_-Ap04';
+const getPayPalAccessToken = async (clientId: string, environment: string) => {
   const clientSecret = Deno.env.get('PAYPAL_CLIENT_SECRET');
   
   if (!clientSecret) {
@@ -47,9 +46,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { amount, currency, description, billingInfo, items, environment } = await req.json()
+    const { amount, currency, description, billingInfo, items, config } = await req.json()
 
-    console.log('Creating PayPal order:', { amount, currency, environment });
+    console.log('Creating PayPal order:', { amount, currency, environment: config.environment });
 
     // Get authenticated user
     const authHeader = req.headers.get('Authorization')!
@@ -93,11 +92,11 @@ serve(async (req) => {
       throw new Error(`Failed to create order items: ${itemsError.message}`)
     }
 
-    // Get PayPal access token
-    const accessToken = await getPayPalAccessToken(environment);
+    // Get PayPal access token using the config
+    const accessToken = await getPayPalAccessToken(config.client_id, config.environment);
 
     // Create PayPal order
-    const paypalUrl = environment === 'sandbox' 
+    const paypalUrl = config.environment === 'sandbox' 
       ? 'https://api.sandbox.paypal.com'
       : 'https://api.paypal.com';
 

@@ -17,20 +17,30 @@ export interface CheckoutFormData {
   zipCode: string;
 }
 
-// PayPal configuration - easy to switch between sandbox and live
-export const PAYPAL_CONFIG = {
-  CLIENT_ID: 'ARMqjKq6xfR0awtlzCm98pTb8gGyB8A88wfgc_QcP2Yg7b6BNjuLWKYrVCFy5IvZkAqPbzUMXK_-Ap04',
-  ENVIRONMENT: 'sandbox', // Change to 'live' for production
-  get PAYPAL_URL() {
-    return this.ENVIRONMENT === 'sandbox' 
-      ? 'https://api.sandbox.paypal.com'
-      : 'https://api.paypal.com';
-  },
-  get PAYPAL_SCRIPT_URL() {
-    return this.ENVIRONMENT === 'sandbox'
-      ? 'https://www.sandbox.paypal.com/sdk/js'
-      : 'https://www.paypal.com/sdk/js';
+export interface PayPalConfig {
+  client_id: string;
+  environment: 'sandbox' | 'live';
+  is_active: boolean;
+}
+
+// Fetch PayPal configuration from database
+export const getPayPalConfig = async (): Promise<PayPalConfig> => {
+  const { data, error } = await supabase
+    .from('paypal_config')
+    .select('*')
+    .single();
+
+  if (error) {
+    // Fallback to default sandbox config if no config found
+    console.warn('PayPal config not found, using default sandbox config');
+    return {
+      client_id: 'ARMqjKq6xfR0awtlzCm98pTb8gGyB8A88wfgc_QcP2Yg7b6BNjuLWKYrVCFy5IvZkAqPbzUMXK_-Ap04',
+      environment: 'sandbox',
+      is_active: true
+    };
   }
+
+  return data;
 };
 
 export const createPayPalOrder = async (
@@ -39,6 +49,12 @@ export const createPayPalOrder = async (
   cartItems: any[]
 ) => {
   try {
+    const config = await getPayPalConfig();
+
+    if (!config.is_active) {
+      throw new Error('PayPal payments are currently disabled');
+    }
+
     const { data, error } = await supabase.functions.invoke('create-paypal-order', {
       body: {
         amount: paymentData.amount,
@@ -46,7 +62,7 @@ export const createPayPalOrder = async (
         description: paymentData.description,
         billingInfo: formData,
         items: cartItems,
-        environment: PAYPAL_CONFIG.ENVIRONMENT
+        config: config
       }
     });
 
@@ -63,10 +79,12 @@ export const createPayPalOrder = async (
 
 export const capturePayPalOrder = async (orderId: string) => {
   try {
+    const config = await getPayPalConfig();
+
     const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
       body: {
         orderId,
-        environment: PAYPAL_CONFIG.ENVIRONMENT
+        config: config
       }
     });
 

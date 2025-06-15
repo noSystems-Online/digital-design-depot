@@ -4,6 +4,7 @@ import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product }
 import { fetchSellerById } from "@/services/sellerService";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PayPalConfigManager from "@/components/PayPalConfigManager";
 import {
   Table,
   TableBody,
@@ -25,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
 import { ChevronUp, ChevronDown, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -172,127 +174,140 @@ const AdminDashboard = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard - All Products</h1>
+        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        ) : products && products.length > 0 ? (
-          <>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      <SortButton field="title">Product</SortButton>
-                    </TableHead>
-                    <TableHead>
-                      <SortButton field="category">Category</SortButton>
-                    </TableHead>
-                    <TableHead>
-                      <SortButton field="price">Price</SortButton>
-                    </TableHead>
-                    <TableHead>
-                      <SortButton field="is_active">Status</SortButton>
-                    </TableHead>
-                    <TableHead>Submitted By</TableHead>
-                    <TableHead>
-                      <SortButton field="created_at">Submitted On</SortButton>
-                    </TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.title}</TableCell>
-                      <TableCell className="capitalize">{product.category}</TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                          {product.is_active ? 'Approved' : 'Pending'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {sellers?.[product.seller_id]?.businessName || 'Loading...'}
-                      </TableCell>
-                      <TableCell>{format(new Date(product.created_at), "PPP")}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Link to={`/product/${product.id}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Details
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleApprove(product.id)}
-                          disabled={approveMutation.isPending || product.is_active}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(product.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          Delete
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {totalPages > 1 && (
-              <div className="mt-6">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(page)}
-                          isActive={currentPage === page}
-                          className="cursor-pointer"
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="products">Product Management</TabsTrigger>
+            <TabsTrigger value="paypal">PayPal Configuration</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="products" className="space-y-4">
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : products && products.length > 0 ? (
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          <SortButton field="title">Product</SortButton>
+                        </TableHead>
+                        <TableHead>
+                          <SortButton field="category">Category</SortButton>
+                        </TableHead>
+                        <TableHead>
+                          <SortButton field="price">Price</SortButton>
+                        </TableHead>
+                        <TableHead>
+                          <SortButton field="is_active">Status</SortButton>
+                        </TableHead>
+                        <TableHead>Submitted By</TableHead>
+                        <TableHead>
+                          <SortButton field="created_at">Submitted On</SortButton>
+                        </TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">{product.title}</TableCell>
+                          <TableCell className="capitalize">{product.category}</TableCell>
+                          <TableCell>${product.price.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                              {product.is_active ? 'Approved' : 'Pending'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {sellers?.[product.seller_id]?.businessName || 'Loading...'}
+                          </TableCell>
+                          <TableCell>{format(new Date(product.created_at), "PPP")}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Link to={`/product/${product.id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View Details
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApprove(product.id)}
+                              disabled={approveMutation.isPending || product.is_active}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(product.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {totalPages > 1 && (
+                  <div className="mt-6">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="bg-gray-100 p-8 rounded-lg text-center">
+                <h2 className="text-xl font-semibold mb-2">No products found</h2>
+                <p className="text-gray-600">No products have been submitted yet.</p>
               </div>
             )}
-          </>
-        ) : (
-          <div className="bg-gray-100 p-8 rounded-lg text-center">
-            <h2 className="text-xl font-semibold mb-2">No products found</h2>
-            <p className="text-gray-600">No products have been submitted yet.</p>
-          </div>
-        )}
+          </TabsContent>
+          
+          <TabsContent value="paypal">
+            <PayPalConfigManager />
+          </TabsContent>
+        </Tabs>
       </main>
       <Footer />
     </div>
