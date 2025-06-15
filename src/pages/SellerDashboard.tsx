@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +10,82 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, DollarSign, Package, TrendingUp, Upload, FileText, CheckCircle, Edit } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductDataTable from "@/components/ProductDataTable";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchProductsBySeller, updateProductStatus } from "@/services/productService";
+import { useToast } from "@/hooks/use-toast";
+
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  sales: number;
+  revenue: number;
+  status: string;
+  category: string;
+  description: string;
+  tags: string;
+}
 
 const SellerDashboard = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Mock seller data - you can replace this with real data later
+  const sellerStats = {
+    totalRevenue: products.reduce((sum, p) => sum + p.revenue, 0),
+    totalProducts: products.length,
+    totalSales: products.reduce((sum, p) => sum + p.sales, 0),
+    monthlyGrowth: 23
+  };
+
+  const recentSales = [
+    { id: 1, product: "React Dashboard Template", buyer: "john.doe@email.com", amount: 49, date: "2024-01-15" },
+    { id: 2, product: "Node.js API Starter", buyer: "jane.smith@email.com", amount: 29, date: "2024-01-14" },
+    { id: 3, product: "Vue Components Pack", buyer: "mike.wilson@email.com", amount: 35, date: "2024-01-13" }
+  ];
+
+  // Fetch products from database
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setLoading(true);
+        const fetchedProducts = await fetchProductsBySeller(user.id);
+        
+        // Transform the data to match the expected format for the table
+        const transformedProducts = fetchedProducts.map(product => ({
+          id: parseInt(product.id),
+          title: product.title,
+          price: product.price,
+          sales: 0, // Mock data for now as we don't have sales tracking yet
+          revenue: 0, // Mock data for now
+          status: product.is_active ? 'active' : 'pending',
+          category: product.category,
+          description: product.description,
+          tags: Array.isArray(product.tags) ? product.tags.join(', ') : ''
+        }));
+        
+        setProducts(transformedProducts);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load products",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [user?.id, toast]);
+
   const [newProduct, setNewProduct] = useState({
     title: "",
     description: "",
@@ -36,26 +107,6 @@ const SellerDashboard = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-
-  // Mock seller data
-  const sellerStats = {
-    totalRevenue: 2450,
-    totalProducts: 8,
-    totalSales: 156,
-    monthlyGrowth: 23
-  };
-
-  const products = [
-    { id: 1, title: "React Dashboard Template", price: 49, sales: 45, revenue: 2205, status: "active", category: "Templates", description: "A modern and responsive React dashboard template with beautiful UI components and charts.", tags: "react, dashboard, admin, template" },
-    { id: 2, title: "Node.js API Starter", price: 29, sales: 32, revenue: 928, status: "active", category: "Code Scripts", description: "Complete Node.js API starter kit with authentication, database integration, and best practices.", tags: "nodejs, api, backend, starter" },
-    { id: 3, title: "Vue Components Pack", price: 35, sales: 28, revenue: 980, status: "pending", category: "Components", description: "A collection of reusable Vue.js components for building modern web applications.", tags: "vue, components, ui, library" }
-  ];
-
-  const recentSales = [
-    { id: 1, product: "React Dashboard Template", buyer: "john.doe@email.com", amount: 49, date: "2024-01-15" },
-    { id: 2, product: "Node.js API Starter", buyer: "jane.smith@email.com", amount: 29, date: "2024-01-14" },
-    { id: 3, product: "Vue Components Pack", buyer: "mike.wilson@email.com", amount: 35, date: "2024-01-13" }
-  ];
 
   const handleSubmitProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,11 +167,58 @@ const SellerDashboard = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleToggleProductStatus = (product: any) => {
-    console.log("Toggling status for product:", product);
-    // Here you would implement the actual status toggle logic
-    // For now, just log it
+  const handleToggleProductStatus = async (product: any) => {
+    try {
+      const newStatus = product.status === 'active' ? false : true;
+      const result = await updateProductStatus(product.id.toString(), newStatus);
+      
+      if (result.success) {
+        // Update local state
+        setProducts(prev => prev.map(p => 
+          p.id === product.id 
+            ? { ...p, status: newStatus ? 'active' : 'pending' }
+            : p
+        ));
+        
+        toast({
+          title: "Success",
+          description: `Product ${newStatus ? 'activated' : 'deactivated'} successfully`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update product status",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling product status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <main className="py-8">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your dashboard...</p>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -477,7 +575,9 @@ const SellerDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">{sellerStats.totalProducts}</div>
-                <p className="text-xs text-gray-600 mt-1">1 pending review</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {products.filter(p => p.status === 'pending').length} pending review
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -565,7 +665,7 @@ const SellerDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {products.sort((a, b) => b.revenue - a.revenue).map((product, index) => (
+                      {products.sort((a, b) => b.revenue - a.revenue).slice(0, 5).map((product, index) => (
                         <div key={product.id} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
