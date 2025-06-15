@@ -58,16 +58,19 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
 
 export const fetchAllProductsForAdmin = async (): Promise<Product[]> => {
   try {
-    const query = supabase
+    console.log('Fetching all products for admin...');
+    
+    const { data, error } = await supabase
       .from('products')
-      .select('*');
-
-    const { data, error } = await query.order('created_at', { ascending: false });
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching all products for admin:', error);
-      return [];
+      throw error;
     }
+
+    console.log('Successfully fetched products:', data?.length || 0);
 
     // Transform the data to match the expected format
     return data.map(product => ({
@@ -87,7 +90,7 @@ export const fetchAllProductsForAdmin = async (): Promise<Product[]> => {
     }));
   } catch (error) {
     console.error('Error in fetchAllProductsForAdmin:', error);
-    return [];
+    throw error;
   }
 };
 
