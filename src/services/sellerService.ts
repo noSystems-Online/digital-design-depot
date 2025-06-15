@@ -9,6 +9,13 @@ export interface Seller {
   lastName?: string;
 }
 
+interface SellerInfo {
+  businessName?: string;
+  phone?: string;
+  description?: string;
+  productTypes?: string[];
+}
+
 export const fetchSellerById = async (sellerId: string): Promise<Seller | null> => {
   try {
     const { data, error } = await supabase
@@ -22,12 +29,16 @@ export const fetchSellerById = async (sellerId: string): Promise<Seller | null> 
       return null;
     }
 
+    // Type guard to check if seller_info is an object with businessName
+    const sellerInfo = data.seller_info as SellerInfo | null;
+    const businessName = sellerInfo?.businessName || `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.email;
+
     return {
       id: data.id,
       email: data.email,
       firstName: data.first_name,
       lastName: data.last_name,
-      businessName: data.seller_info?.businessName || `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.email,
+      businessName,
     };
   } catch (error) {
     console.error('Error in fetchSellerById:', error);
