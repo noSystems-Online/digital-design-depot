@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Star, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Hero = () => {
@@ -29,18 +29,49 @@ const Hero = () => {
             Built by developers, for developers.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-12">
+            <Link to="/register">
+              <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 text-lg">
+                <UserPlus className="mr-2 h-5 w-5" />
+                Get Started Free
+              </Button>
+            </Link>
             <Link to="/software">
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg">
+              <Button size="lg" variant="outline" className="px-8 py-4 text-lg border-2">
                 Browse Products
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link to="/sell">
-              <Button size="lg" variant="outline" className="px-8 py-4 text-lg">
-                Become a Seller
-              </Button>
-            </Link>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Join Our Community Today!</h2>
+            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              Create your free account to access exclusive deals, save your favorites, and connect with top developers. 
+              Start building amazing projects faster than ever before.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-6">
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                Free to join
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                Instant access to products
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                Exclusive member deals
+              </div>
+            </div>
+            <div className="mt-6">
+              <Link to="/register">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3">
+                  Create Account Now
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
