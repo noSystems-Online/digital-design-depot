@@ -22,3 +22,9 @@ enable_confirmations = false
 
 [functions.process-payment]
 verify_jwt = true
+
+[functions.create-paypal-order]
+verify_jwt = true
+
+[functions.capture-paypal-order]
+verify_jwt = true

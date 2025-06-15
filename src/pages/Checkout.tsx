@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import { CreditCard, Building } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { processPayPalPayment } from "@/services/paypalService";
+import { createPayPalOrder, PAYPAL_CONFIG } from "@/services/paypalService";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -90,18 +89,18 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      const paymentData = {
-        amount: total,
-        currency: 'USD',
-        description: `Purchase of ${cartItems.length} item(s)`
-      };
+      if (paymentMethod === 'paypal') {
+        const paymentData = {
+          amount: total,
+          currency: 'USD',
+          description: `Purchase of ${cartItems.length} item(s)`
+        };
 
-      console.log("Processing payment:", { formData, paymentMethod, total, cartItems });
+        console.log("Creating PayPal order:", { formData, paymentMethod, total, cartItems });
 
-      const result = await processPayPalPayment(paymentData, formData, cartItems);
+        const result = await createPayPalOrder(paymentData, formData, cartItems);
 
-      if (result.success) {
-        if (paymentMethod === 'paypal' && result.approvalUrl) {
+        if (result.success && result.approvalUrl) {
           // Open PayPal checkout in a new tab
           window.open(result.approvalUrl, '_blank');
           
@@ -109,19 +108,49 @@ const Checkout = () => {
             title: "Payment Initiated",
             description: "Please complete your payment in the PayPal window that opened.",
           });
-        } else if (paymentMethod === 'bank') {
-          toast({
-            title: "Order Created",
-            description: result.instructions || "Bank transfer instructions have been sent to your email.",
-          });
+
+          // Navigate to a success/pending page
+          setTimeout(() => {
+            navigate('/profile');
+          }, 3000);
+        } else {
+          throw new Error(result.error || 'PayPal order creation failed');
+        }
+      } else if (paymentMethod === 'bank') {
+        // Use the original process-payment function for bank transfers
+        const paymentData = {
+          amount: total,
+          currency: 'USD',
+          description: `Purchase of ${cartItems.length} item(s)`
+        };
+
+        const { data, error } = await supabase.functions.invoke('process-payment', {
+          body: {
+            paymentMethod: 'bank',
+            amount: paymentData.amount,
+            currency: paymentData.currency,
+            description: paymentData.description,
+            billingInfo: formData,
+            items: cartItems
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message);
         }
 
-        // Navigate to a success/pending page or show order details
-        setTimeout(() => {
-          navigate('/profile'); // or to an order confirmation page
-        }, 3000);
-      } else {
-        throw new Error(result.error || 'Payment processing failed');
+        if (data.success) {
+          toast({
+            title: "Order Created",
+            description: data.instructions || "Bank transfer instructions have been sent to your email.",
+          });
+
+          setTimeout(() => {
+            navigate('/profile');
+          }, 3000);
+        } else {
+          throw new Error(data.error || 'Bank transfer setup failed');
+        }
       }
     } catch (error) {
       console.error('Payment error:', error);
