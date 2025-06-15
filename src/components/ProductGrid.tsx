@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, ShoppingCart } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 interface Product {
   id: number;
@@ -26,6 +29,8 @@ interface ProductGridProps {
 
 const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerPage = 8 }: ProductGridProps) => {
   const [displayCount, setDisplayCount] = useState(itemsPerPage);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   const filteredProducts = useMemo(() => {
     return products.filter(product =>
@@ -42,20 +47,41 @@ const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerP
     setDisplayCount(prev => Math.min(prev + itemsPerPage, filteredProducts.length));
   };
 
+  const handleAddToCart = (product: Product) => {
+    const priceNumber = parseFloat(product.price.replace('$', ''));
+    
+    addToCart({
+      id: product.id,
+      title: product.title,
+      price: priceNumber,
+      image: product.image,
+      category: "Software" // You might want to pass this as a prop or derive it
+    });
+    
+    toast({
+      title: "Added to cart!",
+      description: `${product.title} has been added to your cart.`,
+    });
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {displayedProducts.map((product) => (
-          <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 cursor-pointer">
+          <Card key={product.id} className="group hover:shadow-xl transition-all duration-300">
             <CardHeader className="p-0">
-              <div className={`h-48 bg-gradient-to-br ${gradientFrom} ${gradientTo} rounded-t-lg flex items-center justify-center`}>
-                <img src={product.image} alt={product.title} className="w-full h-full object-cover rounded-t-lg" />
-              </div>
+              <Link to={`/product/${product.id}`}>
+                <div className={`h-48 bg-gradient-to-br ${gradientFrom} ${gradientTo} rounded-t-lg flex items-center justify-center cursor-pointer`}>
+                  <img src={product.image} alt={product.title} className="w-full h-full object-cover rounded-t-lg" />
+                </div>
+              </Link>
             </CardHeader>
             <CardContent className="p-6">
-              <CardTitle className="text-lg mb-2 group-hover:text-blue-600 transition-colors">
-                {product.title}
-              </CardTitle>
+              <Link to={`/product/${product.id}`}>
+                <CardTitle className="text-lg mb-2 group-hover:text-blue-600 transition-colors cursor-pointer">
+                  {product.title}
+                </CardTitle>
+              </Link>
               <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                 {product.description}
               </p>
@@ -75,7 +101,11 @@ const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerP
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-blue-600">{product.price}</span>
-                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  onClick={() => handleAddToCart(product)}
+                >
                   <ShoppingCart className="h-4 w-4 mr-1" />
                   Add to Cart
                 </Button>
