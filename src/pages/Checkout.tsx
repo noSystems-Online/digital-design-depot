@@ -1,3 +1,4 @@
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +11,18 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard, Building } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { processPayPalPayment } from "@/services/paypalService";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Checkout = () => {
   const { user } = useAuth();
+  const { cartItems, getTotalPrice } = useCart();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("paypal");
+  const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -40,21 +49,106 @@ const Checkout = () => {
     }
   }, [user]);
 
-  // Mock cart items
-  const cartItems = [
-    { id: 1, title: "React Dashboard Template", price: 49, quantity: 1 },
-    { id: 2, title: "Node.js API Starter", price: 29, quantity: 1 }
-  ];
+  // Redirect if cart is empty
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      toast({
+        title: "Empty Cart",
+        description: "Your cart is empty. Please add items before checkout.",
+        variant: "destructive"
+      });
+      navigate('/cart');
+    }
+  }, [cartItems, navigate, toast]);
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = getTotalPrice();
   const tax = subtotal * 0.1; // 10% tax
   const total = subtotal + tax;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Processing payment:", { formData, paymentMethod, total });
-    // Handle payment processing here
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to complete your purchase.",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      toast({
+        title: "Empty Cart",
+        description: "Your cart is empty.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const paymentData = {
+        amount: total,
+        currency: 'USD',
+        description: `Purchase of ${cartItems.length} item(s)`
+      };
+
+      console.log("Processing payment:", { formData, paymentMethod, total, cartItems });
+
+      const result = await processPayPalPayment(paymentData, formData, cartItems);
+
+      if (result.success) {
+        if (paymentMethod === 'paypal' && result.approvalUrl) {
+          // Open PayPal checkout in a new tab
+          window.open(result.approvalUrl, '_blank');
+          
+          toast({
+            title: "Payment Initiated",
+            description: "Please complete your payment in the PayPal window that opened.",
+          });
+        } else if (paymentMethod === 'bank') {
+          toast({
+            title: "Order Created",
+            description: result.instructions || "Bank transfer instructions have been sent to your email.",
+          });
+        }
+
+        // Navigate to a success/pending page or show order details
+        setTimeout(() => {
+          navigate('/profile'); // or to an order confirmation page
+        }, 3000);
+      } else {
+        throw new Error(result.error || 'Payment processing failed');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "An error occurred during payment processing.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <main className="py-8">
+          <div className="container mx-auto px-4 max-w-6xl text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">Your cart is empty</h1>
+            <Button onClick={() => navigate('/')}>Continue Shopping</Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -170,8 +264,12 @@ const Checkout = () => {
                   </CardContent>
                 </Card>
 
-                <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg py-3">
-                  Complete Purchase - ${total.toFixed(2)}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg py-3"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Processing..." : `Complete Purchase - $${total.toFixed(2)}`}
                 </Button>
               </form>
             </div>
@@ -189,7 +287,7 @@ const Checkout = () => {
                         <h4 className="font-medium text-sm">{item.title}</h4>
                         <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
                       </div>
-                      <span className="font-medium">${item.price}</span>
+                      <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                   
