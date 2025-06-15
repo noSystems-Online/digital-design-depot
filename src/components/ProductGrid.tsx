@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ interface ProductGridProps {
 
 const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, category }: ProductGridProps) => {
   // Ensure itemsPerPage is always a number
-  const itemsPerPageNumber = typeof itemsPerPage === 'string' ? parseInt(itemsPerPage, 10) || 8 : itemsPerPage;
+  const itemsPerPageNumber = Number(itemsPerPage) || 8;
   const [displayCount, setDisplayCount] = useState<number>(itemsPerPageNumber);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
