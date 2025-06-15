@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -19,11 +22,69 @@ const Register = () => {
     confirmPassword: "",
     agreeToTerms: false
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Registration attempt:", formData);
-    // Handle registration logic here
+    setError("");
+    setIsLoading(true);
+
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.agreeToTerms) {
+      setError("You must agree to the terms and conditions");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+          }
+        }
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to confirm your account.",
+        });
+        
+        // Redirect to login page with success message
+        navigate("/login?message=registration-success");
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,6 +108,7 @@ const Register = () => {
                       onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                       placeholder="John"
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div>
@@ -57,6 +119,7 @@ const Register = () => {
                       onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                       placeholder="Doe"
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -69,6 +132,7 @@ const Register = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="your@email.com"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
@@ -80,6 +144,7 @@ const Register = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Create a password"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
@@ -91,6 +156,7 @@ const Register = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     placeholder="Confirm your password"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
@@ -100,14 +166,25 @@ const Register = () => {
                     checked={formData.agreeToTerms}
                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, agreeToTerms: checked as boolean }))}
                     required
+                    disabled={isLoading}
                   />
                   <Label htmlFor="terms" className="text-sm cursor-pointer">
                     I agree to the Terms of Service and Privacy Policy
                   </Label>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={!formData.agreeToTerms}>
-                  Create Account
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={!formData.agreeToTerms || isLoading}
+                >
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
               
