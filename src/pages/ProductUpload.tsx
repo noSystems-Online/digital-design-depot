@@ -20,8 +20,8 @@ const productSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   price: z.coerce.number().min(0.01, "Price must be a positive number"),
   category: z.enum(["software", "templates", "code-scripts", "resources"]),
-  image_url: z.string().url("Please enter a valid image URL"),
-  download_url: z.string().url("Please enter a valid product file URL"),
+  image_url: z.string().url("Please enter a valid image URL").or(z.literal("")).optional(),
+  download_url: z.string().url("Please enter a valid product file URL").or(z.literal("")).optional(),
   tags: z.string().optional(),
 });
 
@@ -56,12 +56,13 @@ const ProductUpload = () => {
       description: values.description,
       price: values.price,
       category: values.category,
-      image_url: values.image_url,
-      download_url: values.download_url,
+      image_url: values.image_url || undefined,
+      download_url: values.download_url || undefined,
       tags: values.tags?.split(",").map(tag => tag.trim()).filter(tag => tag) || [],
       seller_id: user.id,
     };
 
+    console.log("Submitting product data:", productData);
     const result = await createProduct(productData);
     setIsLoading(false);
 
@@ -72,6 +73,7 @@ const ProductUpload = () => {
       });
       navigate("/seller-dashboard");
     } else {
+      console.error("Product submission failed:", result.error);
       toast({
         variant: "destructive",
         title: "Submission Failed",
