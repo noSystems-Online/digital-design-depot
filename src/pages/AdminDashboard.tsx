@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product } from "@/services/productService";
 import { fetchSellerById } from "@/services/sellerService";
@@ -20,6 +21,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationEllipsis,
 } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -29,9 +31,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
 import { ChevronUp, ChevronDown, Eye } from "lucide-react";
-import { Link } from "react-router-dom";
 
-type SortField = 'title' | 'category' | 'price' | 'created_at' | 'is_active';
+type SortField = 'title' | 'category' | 'price' | 'created_at' | 'is_active' | 'seller_id';
 type SortDirection = 'asc' | 'desc';
 
 const AdminDashboard = () => {
@@ -128,6 +129,11 @@ const AdminDashboard = () => {
       } else if (sortField === 'is_active') {
         aValue = aValue ? 1 : 0;
         bValue = bValue ? 1 : 0;
+      } else if (sortField === 'seller_id') {
+        aValue = sellers?.[aValue]?.businessName || '';
+        bValue = sellers?.[bValue]?.businessName || '';
+        aValue = String(aValue).toLowerCase();
+        bValue = String(bValue).toLowerCase();
       } else {
         aValue = String(aValue).toLowerCase();
         bValue = String(bValue).toLowerCase();
@@ -139,7 +145,7 @@ const AdminDashboard = () => {
         return aValue < bValue ? 1 : -1;
       }
     });
-  }, [products, sortField, sortDirection]);
+  }, [products, sortField, sortDirection, sellers]);
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -169,7 +175,7 @@ const AdminDashboard = () => {
   const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <button
       onClick={() => handleSort(field)}
-      className="flex items-center space-x-1 hover:bg-muted/50 p-1 rounded"
+      className="flex items-center space-x-1 hover:bg-muted/50 p-1 rounded transition-colors"
     >
       <span>{children}</span>
       {sortField === field && (
@@ -177,6 +183,67 @@ const AdminDashboard = () => {
       )}
     </button>
   );
+
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      items.push(
+        <PaginationItem key={1}>
+          <PaginationLink
+            onClick={() => setCurrentPage(1)}
+            isActive={false}
+            className="cursor-pointer"
+          >
+            1
+          </PaginationLink>
+        </PaginationItem>
+      );
+      if (startPage > 2) {
+        items.push(<PaginationItem key="ellipsis1"><PaginationEllipsis /></PaginationItem>);
+      }
+    }
+
+    for (let page = startPage; page <= endPage; page++) {
+      items.push(
+        <PaginationItem key={page}>
+          <PaginationLink
+            onClick={() => setCurrentPage(page)}
+            isActive={currentPage === page}
+            className="cursor-pointer"
+          >
+            {page}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(<PaginationItem key="ellipsis2"><PaginationEllipsis /></PaginationItem>);
+      }
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink
+            onClick={() => setCurrentPage(totalPages)}
+            isActive={false}
+            className="cursor-pointer"
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
+  };
 
   if (error) {
     return <div>Error loading products: {error.message}</div>;
@@ -219,7 +286,9 @@ const AdminDashboard = () => {
                         <TableHead>
                           <SortButton field="is_active">Status</SortButton>
                         </TableHead>
-                        <TableHead>Submitted By</TableHead>
+                        <TableHead>
+                          <SortButton field="seller_id">Submitted By</SortButton>
+                        </TableHead>
                         <TableHead>
                           <SortButton field="created_at">Submitted On</SortButton>
                         </TableHead>
@@ -284,17 +353,7 @@ const AdminDashboard = () => {
                           />
                         </PaginationItem>
                         
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(page)}
-                              isActive={currentPage === page}
-                              className="cursor-pointer"
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        ))}
+                        {renderPaginationItems()}
                         
                         <PaginationItem>
                           <PaginationNext
