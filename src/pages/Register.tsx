@@ -52,11 +52,16 @@ const Register = () => {
     }
 
     try {
+      // Use the current domain for email redirect instead of window.location.origin
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? `${window.location.origin}/`
+        : `https://${window.location.hostname}/`;
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: redirectUrl,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
