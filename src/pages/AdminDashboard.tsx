@@ -1,10 +1,10 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product } from "@/services/productService";
 import { fetchSellerById } from "@/services/sellerService";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PayPalConfigManager from "@/components/PayPalConfigManager";
+import ProductDetailsModal from "@/components/ProductDetailsModal";
 import {
   Table,
   TableBody,
@@ -40,6 +40,8 @@ const AdminDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const itemsPerPage = 10;
 
   const { data: products, isLoading, error } = useQuery({
@@ -154,6 +156,16 @@ const AdminDashboard = () => {
     deleteMutation.mutate(productId);
   };
 
+  const handleViewDetails = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
   const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <button
       onClick={() => handleSort(field)}
@@ -230,15 +242,14 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>{format(new Date(product.created_at), "PPP")}</TableCell>
                           <TableCell className="text-right space-x-2">
-                            <Link to={`/product/${product.id}`}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                View Details
-                              </Button>
-                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(product)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Details
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -308,6 +319,13 @@ const AdminDashboard = () => {
             <PayPalConfigManager />
           </TabsContent>
         </Tabs>
+
+        <ProductDetailsModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          sellerName={selectedProduct ? sellers?.[selectedProduct.seller_id]?.businessName : undefined}
+        />
       </main>
       <Footer />
     </div>
