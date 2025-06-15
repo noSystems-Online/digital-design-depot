@@ -89,16 +89,6 @@ const Login = () => {
               <p className="text-gray-600">Sign in to your CodeMarket account</p>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Demo Credentials Info */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-medium text-blue-900 mb-2">Demo Credentials:</h3>
-                <div className="text-sm text-blue-800 space-y-1">
-                  <p><strong>Buyer only:</strong> buyer@demo.com / buyer123</p>
-                  <p><strong>Seller (approved):</strong> seller@demo.com / seller123</p>
-                  <p><strong>Dual role:</strong> dual@demo.com / dual123</p>
-                </div>
-              </div>
-
               {successMessage && (
                 <Alert>
                   <AlertDescription>{successMessage}</AlertDescription>
