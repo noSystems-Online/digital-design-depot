@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product } from "@/services/productService";
 import { fetchSellerById } from "@/services/sellerService";
@@ -30,8 +29,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
-import { ChevronUp, ChevronDown, Eye, Users } from "lucide-react";
+import { ChevronUp, ChevronDown, Eye, Users, Search, Filter } from "lucide-react";
 
 type SortField = 'title' | 'category' | 'price' | 'created_at' | 'is_active' | 'seller_id';
 type SortDirection = 'asc' | 'desc';
@@ -62,6 +63,9 @@ const AdminDashboard = () => {
   const [usersCurrentPage, setUsersCurrentPage] = useState(1);
   const [usersSortField, setUsersSortField] = useState<UserSortField>('created_at');
   const [usersSortDirection, setUsersSortDirection] = useState<UserSortDirection>('desc');
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<string>('all');
+  const [userSellerStatusFilter, setUserSellerStatusFilter] = useState<string>('all');
   
   const itemsPerPage = 10;
 
@@ -192,10 +196,31 @@ const AdminDashboard = () => {
     });
   }, [products, sortField, sortDirection, sellers]);
 
-  const sortedUsers = useMemo(() => {
+  const filteredAndSortedUsers = useMemo(() => {
     if (!users) return [];
     
-    return [...users].sort((a, b) => {
+    // Filter users
+    let filtered = users.filter(user => {
+      // Search filter
+      const matchesSearch = userSearchTerm === '' || 
+        user.email.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+        (user.first_name && user.first_name.toLowerCase().includes(userSearchTerm.toLowerCase())) ||
+        (user.last_name && user.last_name.toLowerCase().includes(userSearchTerm.toLowerCase()));
+
+      // Role filter
+      const matchesRole = userRoleFilter === 'all' || 
+        (user.roles && user.roles.includes(userRoleFilter));
+
+      // Seller status filter
+      const matchesSellerStatus = userSellerStatusFilter === 'all' ||
+        (userSellerStatusFilter === 'none' && !user.seller_status) ||
+        user.seller_status === userSellerStatusFilter;
+
+      return matchesSearch && matchesRole && matchesSellerStatus;
+    });
+    
+    // Sort users
+    return filtered.sort((a, b) => {
       let aValue: any = a[usersSortField];
       let bValue: any = b[usersSortField];
       
@@ -203,8 +228,8 @@ const AdminDashboard = () => {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       } else if (usersSortField === 'roles') {
-        aValue = (aValue || []).join(',');
-        bValue = (bValue || []).join(',');
+        aValue = (aValue || ['buyer']).join(',');
+        bValue = (bValue || ['buyer']).join(',');
         aValue = String(aValue).toLowerCase();
         bValue = String(bValue).toLowerCase();
       } else {
@@ -218,7 +243,7 @@ const AdminDashboard = () => {
         return aValue < bValue ? 1 : -1;
       }
     });
-  }, [users, usersSortField, usersSortDirection]);
+  }, [users, usersSortField, usersSortDirection, userSearchTerm, userRoleFilter, userSellerStatusFilter]);
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -227,11 +252,11 @@ const AdminDashboard = () => {
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (usersCurrentPage - 1) * itemsPerPage;
-    return sortedUsers.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedUsers, usersCurrentPage]);
+    return filteredAndSortedUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedUsers, usersCurrentPage]);
 
   const totalPages = Math.ceil((sortedProducts?.length || 0) / itemsPerPage);
-  const usersTotalPages = Math.ceil((sortedUsers?.length || 0) / itemsPerPage);
+  const usersTotalPages = Math.ceil((filteredAndSortedUsers?.length || 0) / itemsPerPage);
 
   const handleApprove = (productId: string) => {
     approveMutation.mutate(productId);
@@ -470,6 +495,49 @@ const AdminDashboard = () => {
           </TabsContent>
           
           <TabsContent value="users" className="space-y-4">
+            {/* Users filter controls */}
+            <div className="flex gap-4 items-center mb-4 bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search users..."
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                  className="w-64"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="buyer">Buyer</SelectItem>
+                    <SelectItem value="seller">Seller</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Select value={userSellerStatusFilter} onValueChange={setUserSellerStatusFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by seller status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Seller Statuses</SelectItem>
+                    <SelectItem value="none">No Seller Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {usersLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-12 w-full" />
@@ -533,6 +601,12 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+                
+                <div className="text-sm text-gray-600 mb-2">
+                  Showing {paginatedUsers.length} of {filteredAndSortedUsers.length} users
+                  {userSearchTerm || userRoleFilter !== 'all' || userSellerStatusFilter !== 'all' ? 
+                    ` (filtered from ${users.length} total)` : ''}
                 </div>
                 
                 {usersTotalPages > 1 && (
