@@ -18,8 +18,10 @@ import Register from "./pages/Register";
 import ProductDetails from "./pages/ProductDetails";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
-import SellerDashboard from "./pages/SellerDashboard";
 import NotFound from "./pages/NotFound";
+import NewSellerDashboard from "./pages/NewSellerDashboard";
+import ProductUpload from "./pages/ProductUpload";
+import SellerRoute from "./components/SellerRoute";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +45,13 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/seller-dashboard" element={<SellerDashboard />} />
+              
+              {/* Protected Seller Routes */}
+              <Route element={<SellerRoute />}>
+                <Route path="/seller-dashboard" element={<NewSellerDashboard />} />
+                <Route path="/product-upload" element={<ProductUpload />} />
+              </Route>
+              
               <Route path="/product/:id" element={<ProductDetails />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
