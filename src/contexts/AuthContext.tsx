@@ -24,6 +24,7 @@ interface AuthContextType {
   isSeller: boolean;
   isSellerApproved: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   applyToBeSeller: (sellerData: any) => Promise<{ success: boolean; error?: string }>;
   loading: boolean;
@@ -111,6 +112,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -165,6 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isSeller,
       isSellerApproved,
       login,
+      loginWithGoogle,
       logout,
       applyToBeSeller,
       loading
