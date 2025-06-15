@@ -12,7 +12,7 @@ const FeaturedProducts = () => {
 
   const products = [
     {
-      id: 1,
+      id: "1",
       title: "React E-commerce Dashboard",
       description: "Complete admin dashboard with analytics, user management, and order tracking",
       price: 89,
@@ -25,7 +25,7 @@ const FeaturedProducts = () => {
       tagColor: "bg-green-500"
     },
     {
-      id: 2,
+      id: "2",
       title: "Mobile Banking App Template",
       description: "React Native banking app with biometric auth and payment integration",
       price: 129,
@@ -38,7 +38,7 @@ const FeaturedProducts = () => {
       tagColor: "bg-blue-500"
     },
     {
-      id: 3,
+      id: "3",
       title: "Python Data Analysis Toolkit",
       description: "Complete suite of data analysis scripts and visualization tools",
       price: 45,
@@ -51,7 +51,7 @@ const FeaturedProducts = () => {
       tagColor: "bg-purple-500"
     },
     {
-      id: 4,
+      id: "4",
       title: "SaaS Landing Page Kit",
       description: "Modern landing page templates for SaaS products with conversion optimization",
       price: 67,
@@ -64,7 +64,7 @@ const FeaturedProducts = () => {
       tagColor: "bg-red-500"
     },
     {
-      id: 5,
+      id: "5",
       title: "Vue.js Component Library",
       description: "Professional UI component library with 50+ customizable components",
       price: 156,
@@ -77,7 +77,7 @@ const FeaturedProducts = () => {
       tagColor: "bg-yellow-500"
     },
     {
-      id: 6,
+      id: "6",
       title: "Node.js API Boilerplate",
       description: "Production-ready REST API with authentication, testing, and documentation",
       price: 78,

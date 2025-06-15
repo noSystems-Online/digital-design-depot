@@ -15,7 +15,7 @@ const ProductDetails = () => {
   
   // Mock product data - in real app, fetch based on id
   const product = {
-    id: parseInt(id || "1"),
+    id: id || "1",
     title: "React Dashboard Template",
     price: 49,
     originalPrice: 79,
