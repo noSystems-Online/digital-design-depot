@@ -52,7 +52,12 @@ const ProductUpload = () => {
     setIsLoading(true);
 
     const productData: ProductCreationData = {
-      ...values,
+      title: values.title,
+      description: values.description,
+      price: values.price,
+      category: values.category,
+      image_url: values.image_url,
+      download_url: values.download_url,
       tags: values.tags?.split(",").map(tag => tag.trim()).filter(tag => tag) || [],
       seller_id: user.id,
     };
