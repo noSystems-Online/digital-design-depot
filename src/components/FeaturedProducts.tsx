@@ -1,10 +1,15 @@
-
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, ShoppingCart, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const FeaturedProducts = () => {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
   const products = [
     {
       id: 1,
@@ -86,6 +91,21 @@ const FeaturedProducts = () => {
     }
   ];
 
+  const handleAddToCart = (product: typeof products[0]) => {
+    addToCart({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      image: product.image,
+      category: product.category
+    });
+    
+    toast({
+      title: "Added to cart!",
+      description: `${product.title} has been added to your cart.`,
+    });
+  };
+
   return (
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -101,23 +121,25 @@ const FeaturedProducts = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product) => (
             <Card key={product.id} className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-0 shadow-lg overflow-hidden">
-              <div className="relative overflow-hidden">
-                <img 
-                  src={product.image} 
-                  alt={product.title}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute top-3 left-3">
-                  <Badge className={`${product.tagColor} text-white border-0`}>
-                    {product.tag}
-                  </Badge>
+              <Link to={`/product/${product.id}`}>
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={product.image} 
+                    alt={product.title}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-3 left-3">
+                    <Badge className={`${product.tagColor} text-white border-0`}>
+                      {product.tag}
+                    </Badge>
+                  </div>
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button size="sm" variant="secondary" className="h-8 w-8 p-0">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="sm" variant="secondary" className="h-8 w-8 p-0">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              </Link>
               
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between mb-2">
@@ -130,9 +152,11 @@ const FeaturedProducts = () => {
                     <span className="text-xs text-gray-500">({product.reviews})</span>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold group-hover:text-blue-600 transition-colors line-clamp-1">
-                  {product.title}
-                </h3>
+                <Link to={`/product/${product.id}`}>
+                  <h3 className="text-lg font-semibold group-hover:text-blue-600 transition-colors line-clamp-1">
+                    {product.title}
+                  </h3>
+                </Link>
               </CardHeader>
               
               <CardContent className="pb-4">
@@ -150,7 +174,13 @@ const FeaturedProducts = () => {
                     ${product.originalPrice}
                   </span>
                 </div>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                <Button 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleAddToCart(product);
+                  }}
+                >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Add to Cart
                 </Button>
@@ -160,9 +190,11 @@ const FeaturedProducts = () => {
         </div>
         
         <div className="text-center mt-12">
-          <Button size="lg" variant="outline" className="px-8 py-3">
-            View All Products
-          </Button>
+          <Link to="/software">
+            <Button size="lg" variant="outline" className="px-8 py-3">
+              View All Products
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

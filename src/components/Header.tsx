@@ -3,10 +3,13 @@ import { ShoppingCart, Search, User, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 
 const Header = () => {
   // Mock authentication state - in real app, this would come from auth context
   const isLoggedIn = false;
+  const { getTotalItems } = useCart();
+  const totalItems = getTotalItems();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -65,9 +68,11 @@ const Header = () => {
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
-              </span>
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
             </Button>
           </Link>
         </div>

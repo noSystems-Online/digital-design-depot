@@ -1,21 +1,24 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Download, Shield, Clock, User } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   
   // Mock product data - in real app, fetch based on id
   const product = {
-    id: id || "1",
+    id: parseInt(id || "1"),
     title: "React Dashboard Template",
-    price: "$49",
-    originalPrice: "$79",
+    price: 49,
+    originalPrice: 79,
     rating: 4.8,
     reviews: 124,
     downloads: 2500,
@@ -32,6 +35,26 @@ const ProductDetails = () => {
     ],
     images: ["/placeholder.svg"],
     tags: ["React", "TypeScript", "Dashboard", "Admin", "UI Kit"]
+  };
+
+  const handleAddToCart = () => {
+    addToCart({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      image: product.images[0],
+      category: product.category
+    });
+    
+    toast({
+      title: "Added to cart!",
+      description: `${product.title} has been added to your cart.`,
+    });
+  };
+
+  const handleBuyNow = () => {
+    handleAddToCart();
+    // In a real app, you might redirect to checkout immediately
   };
 
   return (
@@ -112,19 +135,28 @@ const ProductDetails = () => {
                 <CardContent className="p-6">
                   <div className="text-center mb-6">
                     <div className="flex items-center justify-center space-x-2 mb-2">
-                      <span className="text-3xl font-bold text-green-600">{product.price}</span>
-                      <span className="text-lg text-gray-500 line-through">{product.originalPrice}</span>
+                      <span className="text-3xl font-bold text-green-600">${product.price}</span>
+                      <span className="text-lg text-gray-500 line-through">${product.originalPrice}</span>
                     </div>
                     <p className="text-sm text-gray-600">One-time purchase</p>
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Button 
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      onClick={handleAddToCart}
+                    >
                       Add to Cart
                     </Button>
-                    <Button variant="outline" className="w-full">
-                      Buy Now
-                    </Button>
+                    <Link to="/checkout">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={handleBuyNow}
+                      >
+                        Buy Now
+                      </Button>
+                    </Link>
                   </div>
 
                   <div className="space-y-3 text-sm">
