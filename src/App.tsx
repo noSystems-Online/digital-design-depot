@@ -10,6 +10,7 @@ import Templates from "./pages/Templates";
 import CodeScripts from "./pages/CodeScripts";
 import Resources from "./pages/Resources";
 import Cart from "./pages/Cart";
+import SellerRegistration from "./pages/SellerRegistration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/code-scripts" element={<CodeScripts />} />
           <Route path="/resources" element={<Resources />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/sell" element={<SellerRegistration />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
