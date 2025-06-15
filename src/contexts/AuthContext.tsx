@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -59,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -70,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error fetching profile:', error);
         setLoading(false);
-        return;
+        return null;
       }
 
       const userData: User = {
@@ -83,8 +84,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
 
       setUser(userData);
+      return userData;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -102,8 +105,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data.user) {
-        await fetchUserProfile(data.user);
-        return { success: true };
+        const userProfile = await fetchUserProfile(data.user);
+        if (userProfile) {
+          return { success: true, user: userProfile };
+        }
+        return { success: false, error: "Could not fetch user profile after login." };
       }
 
       return { success: false, error: 'Login failed' };
