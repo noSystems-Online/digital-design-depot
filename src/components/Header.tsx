@@ -1,10 +1,13 @@
 
-import { ShoppingCart, Search, User } from "lucide-react";
+import { ShoppingCart, Search, User, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 
 const Header = () => {
+  // Mock authentication state - in real app, this would come from auth context
+  const isLoggedIn = false;
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -44,9 +47,20 @@ const Header = () => {
             </div>
           </div>
           
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-          </Button>
+          {isLoggedIn ? (
+            <Link to="/profile">
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+          ) : (
+            <Link to="/login">
+              <Button variant="ghost" size="sm" className="flex items-center">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login
+              </Button>
+            </Link>
+          )}
           
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative">
