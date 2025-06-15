@@ -161,7 +161,7 @@ export const deleteProduct = async (productId: string) => {
   }
 };
 
-export const createProduct = async (productData: {
+export interface ProductCreationData {
   title: string;
   description: string;
   category: 'software' | 'templates' | 'code-scripts' | 'resources';
@@ -170,7 +170,9 @@ export const createProduct = async (productData: {
   download_url: string;
   tags?: string[];
   seller_id: string;
-}) => {
+}
+
+export const createProduct = async (productData: ProductCreationData) => {
   try {
     const { data, error } = await supabase
       .from('products')

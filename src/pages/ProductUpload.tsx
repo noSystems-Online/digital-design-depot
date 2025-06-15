@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { createProduct } from "@/services/productService";
+import { createProduct, ProductCreationData } from "@/services/productService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -51,7 +51,7 @@ const ProductUpload = () => {
     }
     setIsLoading(true);
 
-    const productData = {
+    const productData: ProductCreationData = {
       ...values,
       tags: values.tags?.split(",").map(tag => tag.trim()).filter(tag => tag) || [],
       seller_id: user.id,
