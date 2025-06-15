@@ -30,11 +30,14 @@ interface SellerRegistrationModalProps {
   onClose: () => void;
 }
 
+type SellerStatus = 'pending' | 'approved' | 'rejected';
+type UserRole = 'buyer' | 'seller' | 'admin';
+
 const SellerRegistrationModal = ({ user, isOpen, onClose }: SellerRegistrationModalProps) => {
   const queryClient = useQueryClient();
 
   const updateSellerStatusMutation = useMutation({
-    mutationFn: async ({ userId, status, roles }: { userId: string; status: string; roles: string[] }) => {
+    mutationFn: async ({ userId, status, roles }: { userId: string; status: SellerStatus; roles: UserRole[] }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ 
@@ -59,10 +62,10 @@ const SellerRegistrationModal = ({ user, isOpen, onClose }: SellerRegistrationMo
   const handleApprove = () => {
     if (!user) return;
     
-    const newRoles = user.roles?.includes('seller') ? user.roles : [...(user.roles || []), 'seller'];
+    const newRoles = user.roles?.includes('seller') ? user.roles as UserRole[] : [...(user.roles || []), 'seller'] as UserRole[];
     updateSellerStatusMutation.mutate({
       userId: user.id,
-      status: 'approved',
+      status: 'approved' as SellerStatus,
       roles: newRoles
     });
   };
@@ -70,10 +73,10 @@ const SellerRegistrationModal = ({ user, isOpen, onClose }: SellerRegistrationMo
   const handleReject = () => {
     if (!user) return;
     
-    const newRoles = user.roles?.filter(role => role !== 'seller') || [];
+    const newRoles = user.roles?.filter(role => role !== 'seller') as UserRole[] || [];
     updateSellerStatusMutation.mutate({
       userId: user.id,
-      status: 'rejected',
+      status: 'rejected' as SellerStatus,
       roles: newRoles
     });
   };
