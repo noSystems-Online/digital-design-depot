@@ -1,5 +1,5 @@
 
-import { ShoppingCart, Search, User, LogIn, LogOut } from "lucide-react";
+import { ShoppingCart, Search, User, LogIn, LogOut, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -9,11 +9,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 const Header = () => {
-  const { isLoggedIn, user, logout } = useAuth();
+  const { isLoggedIn, user, logout, isSeller, isSellerApproved } = useAuth();
   const { getTotalItems } = useCart();
   const totalItems = getTotalItems();
 
@@ -39,9 +41,11 @@ const Header = () => {
             <Link to="/resources" className="text-sm font-medium hover:text-blue-600 transition-colors">
               Resources
             </Link>
-            <Link to="/sell" className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors border border-green-200 px-3 py-1 rounded-full">
-              Sell Products
-            </Link>
+            {!isSeller && (
+              <Link to="/sell" className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors border border-green-200 px-3 py-1 rounded-full">
+                Become a Seller
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -62,17 +66,45 @@ const Header = () => {
                 <Button variant="ghost" size="sm" className="flex items-center">
                   <User className="h-4 w-4 mr-2" />
                   {user?.name}
+                  {isSeller && (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      {isSellerApproved ? 'Seller' : 'Pending'}
+                    </Badge>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
                   <Link to="/profile">Profile</Link>
                 </DropdownMenuItem>
-                {user?.role === 'seller' && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/seller-dashboard">Dashboard</Link>
-                  </DropdownMenuItem>
+                {isSeller && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/sell" className="flex items-center">
+                        <Store className="h-4 w-4 mr-2" />
+                        Seller Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    {isSellerApproved && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/seller-dashboard">Seller Dashboard</Link>
+                      </DropdownMenuItem>
+                    )}
+                  </>
                 )}
+                {!isSeller && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/sell" className="flex items-center text-green-600">
+                        <Store className="h-4 w-4 mr-2" />
+                        Become a Seller
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
