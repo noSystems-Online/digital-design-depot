@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -37,13 +38,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setLoading(true);
+
+    // Check for an existing session on initial load.
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        // Using setTimeout to defer the call and avoid issues inside the onAuthStateChange callback
+        fetchUserProfile(session.user);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for subsequent auth state changes.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Defer fetching profile to avoid issues inside onAuthStateChange callback
         setTimeout(() => {
           fetchUserProfile(session.user);
         }, 0);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setLoading(false);
       }
