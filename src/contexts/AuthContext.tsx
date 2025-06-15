@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
   roles: ('buyer' | 'seller')[];
@@ -23,85 +26,131 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
   applyToBeSeller: (sellerData: any) => Promise<{ success: boolean; error?: string }>;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo credentials - updated to support multiple roles
-const DEMO_USERS = [
-  { 
-    id: 1, 
-    email: 'buyer@demo.com', 
-    password: 'buyer123', 
-    name: 'John Buyer', 
-    roles: ['buyer' as const]
-  },
-  { 
-    id: 2, 
-    email: 'seller@demo.com', 
-    password: 'seller123', 
-    name: 'Jane Seller', 
-    roles: ['buyer' as const, 'seller' as const],
-    sellerStatus: 'approved' as const,
-    sellerInfo: {
-      businessName: 'Jane\'s Digital Store',
-      description: 'Creating amazing digital products',
-      productTypes: ['Software Applications', 'Website Templates']
-    }
-  },
-  { 
-    id: 3, 
-    email: 'dual@demo.com', 
-    password: 'dual123', 
-    name: 'Alex Both', 
-    roles: ['buyer' as const, 'seller' as const],
-    sellerStatus: 'approved' as const,
-    sellerInfo: {
-      businessName: 'Alex Creative Studio',
-      description: 'Full-stack developer and designer',
-      productTypes: ['Software Applications', 'Design Resources', 'Code Scripts & Libraries']
-    }
-  }
-];
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = async (email: string, password: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserProfile(session.user);
+      } else {
+        setLoading(false);
+      }
+    });
 
-    const foundUser = DEMO_USERS.find(u => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      return { success: true, user: userWithoutPassword };
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await fetchUserProfile(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setLoading(false);
+        return;
+      }
+
+      const userData: User = {
+        id: profile.id,
+        email: profile.email,
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
+        roles: profile.roles || ['buyer'],
+        sellerStatus: profile.seller_status,
+        sellerInfo: profile.seller_info
+      };
+
+      setUser(userData);
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    return { success: false, error: 'Invalid email or password' };
   };
 
-  const logout = () => {
-    setUser(null);
+  const login = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        await fetchUserProfile(data.user);
+        return { success: true };
+      }
+
+      return { success: false, error: 'Login failed' };
+    } catch (error) {
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   const applyToBeSeller = async (sellerData: any) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (user) {
-      const updatedUser = {
-        ...user,
-        roles: [...user.roles, 'seller' as const],
-        sellerStatus: 'pending' as const,
-        sellerInfo: sellerData
-      };
-      setUser(updatedUser);
-      return { success: true };
+    if (!user) {
+      return { success: false, error: 'User not found' };
     }
-    
-    return { success: false, error: 'User not found' };
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          roles: [...user.roles, 'seller'],
+          seller_status: 'pending',
+          seller_info: sellerData
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      // Update local user state
+      setUser({
+        ...user,
+        roles: [...user.roles, 'seller'],
+        sellerStatus: 'pending',
+        sellerInfo: sellerData
+      });
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'An unexpected error occurred' };
+    }
   };
 
   const isBuyer = user?.roles.includes('buyer') || false;
@@ -117,7 +166,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isSellerApproved,
       login,
       logout,
-      applyToBeSeller
+      applyToBeSeller,
+      loading
     }}>
       {children}
     </AuthContext.Provider>

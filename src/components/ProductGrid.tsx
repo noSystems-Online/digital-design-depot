@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,30 +7,33 @@ import { Star, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: string;
-  rating: number;
-  reviews: number;
-  image: string;
-  tags: string[];
-}
+import { Product, fetchProducts } from "@/services/productService";
 
 interface ProductGridProps {
-  products: Product[];
   searchTerm: string;
   gradientFrom: string;
   gradientTo: string;
   itemsPerPage?: number;
+  category?: string;
 }
 
-const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerPage = 8 }: ProductGridProps) => {
+const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, category }: ProductGridProps) => {
   const [displayCount, setDisplayCount] = useState(itemsPerPage);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      const fetchedProducts = await fetchProducts(category);
+      setProducts(fetchedProducts);
+      setLoading(false);
+    };
+
+    loadProducts();
+  }, [category]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(product =>
@@ -48,14 +51,12 @@ const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerP
   };
 
   const handleAddToCart = (product: Product) => {
-    const priceNumber = parseFloat(product.price.replace('$', ''));
-    
     addToCart({
       id: product.id,
       title: product.title,
-      price: priceNumber,
+      price: product.price,
       image: product.image,
-      category: "Software" // You might want to pass this as a prop or derive it
+      category: product.category
     });
     
     toast({
@@ -63,6 +64,23 @@ const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerP
       description: `${product.title} has been added to your cart.`,
     });
   };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <div className="h-48 bg-gray-200 rounded-t-lg"></div>
+            <CardContent className="p-6">
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded mb-4"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -100,7 +118,7 @@ const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerP
                 ))}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-blue-600">{product.price}</span>
+                <span className="text-2xl font-bold text-blue-600">${product.price}</span>
                 <Button 
                   size="sm" 
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
@@ -123,7 +141,7 @@ const ProductGrid = ({ products, searchTerm, gradientFrom, gradientTo, itemsPerP
         </div>
       )}
       
-      {filteredProducts.length === 0 && searchTerm && (
+      {filteredProducts.length === 0 && searchTerm && !loading && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No products found matching "{searchTerm}"</p>
         </div>

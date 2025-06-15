@@ -1,0 +1,117 @@
+
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  rating: number;
+  reviews: number;
+  image: string;
+  tags: string[];
+  category: 'software' | 'templates' | 'code-scripts' | 'resources';
+  seller_id: string;
+  download_url?: string;
+  created_at: string;
+}
+
+export const fetchProducts = async (category?: string): Promise<Product[]> => {
+  try {
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true);
+
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching products:', error);
+      return [];
+    }
+
+    // Transform the data to match the expected format
+    return data.map(product => ({
+      id: product.id,
+      title: product.title,
+      description: product.description || '',
+      price: parseFloat(product.price),
+      rating: 4.5, // Default rating since we don't have reviews yet
+      reviews: 0, // Default reviews count
+      image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
+      tags: product.tags || [],
+      category: product.category,
+      seller_id: product.seller_id,
+      download_url: product.download_url,
+      created_at: product.created_at
+    }));
+  } catch (error) {
+    console.error('Error in fetchProducts:', error);
+    return [];
+  }
+};
+
+export const fetchProductById = async (id: string): Promise<Product | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      console.error('Error fetching product:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description || '',
+      price: parseFloat(data.price),
+      rating: 4.5,
+      reviews: 0,
+      image: data.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
+      tags: data.tags || [],
+      category: data.category,
+      seller_id: data.seller_id,
+      download_url: data.download_url,
+      created_at: data.created_at
+    };
+  } catch (error) {
+    console.error('Error in fetchProductById:', error);
+    return null;
+  }
+};
+
+export const createProduct = async (productData: {
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  image_url?: string;
+  download_url?: string;
+  tags?: string[];
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .insert([productData])
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error creating product:', error);
+    return { success: false, error };
+  }
+};
