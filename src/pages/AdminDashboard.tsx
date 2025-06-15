@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product } from "@/services/productService";
 import { fetchSellerById } from "@/services/sellerService";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PayPalConfigManager from "@/components/PayPalConfigManager";
@@ -30,10 +30,23 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
-import { ChevronUp, ChevronDown, Eye } from "lucide-react";
+import { ChevronUp, ChevronDown, Eye, Users } from "lucide-react";
 
 type SortField = 'title' | 'category' | 'price' | 'created_at' | 'is_active' | 'seller_id';
 type SortDirection = 'asc' | 'desc';
+
+type UserSortField = 'email' | 'first_name' | 'last_name' | 'created_at' | 'roles';
+type UserSortDirection = 'asc' | 'desc';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  roles: string[];
+  created_at: string;
+  seller_status: string | null;
+}
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
@@ -43,11 +56,32 @@ const AdminDashboard = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Users tab state
+  const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+  const [usersSortField, setUsersSortField] = useState<UserSortField>('created_at');
+  const [usersSortDirection, setUsersSortDirection] = useState<UserSortDirection>('desc');
+  
   const itemsPerPage = 10;
 
+  // Fetch all products
   const { data: products, isLoading, error } = useQuery({
     queryKey: ['allAdminProducts'],
     queryFn: fetchAllProductsForAdmin,
+  });
+
+  // Fetch all users
+  const { data: users, isLoading: usersLoading } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as UserProfile[];
+    },
   });
 
   const { data: sellers } = useQuery({
@@ -184,11 +218,23 @@ const AdminDashboard = () => {
     </button>
   );
 
-  const renderPaginationItems = () => {
+  const UsersSortButton = ({ field, children }: { field: UserSortField; children: React.ReactNode }) => (
+    <button
+      onClick={() => handleUsersSort(field)}
+      className="flex items-center space-x-1 hover:bg-muted/50 p-1 rounded transition-colors"
+    >
+      <span>{children}</span>
+      {usersSortField === field && (
+        usersSortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+      )}
+    </button>
+  );
+
+  const renderPaginationItems = (currentPageParam: number, totalPagesParam: number, setPageFunc: (page: number) => void) => {
     const items = [];
     const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    let startPage = Math.max(1, currentPageParam - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPagesParam, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
@@ -198,7 +244,7 @@ const AdminDashboard = () => {
       items.push(
         <PaginationItem key={1}>
           <PaginationLink
-            onClick={() => setCurrentPage(1)}
+            onClick={() => setPageFunc(1)}
             isActive={false}
             className="cursor-pointer"
           >
@@ -215,8 +261,8 @@ const AdminDashboard = () => {
       items.push(
         <PaginationItem key={page}>
           <PaginationLink
-            onClick={() => setCurrentPage(page)}
-            isActive={currentPage === page}
+            onClick={() => setPageFunc(page)}
+            isActive={currentPageParam === page}
             className="cursor-pointer"
           >
             {page}
@@ -225,18 +271,18 @@ const AdminDashboard = () => {
       );
     }
 
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
+    if (endPage < totalPagesParam) {
+      if (endPage < totalPagesParam - 1) {
         items.push(<PaginationItem key="ellipsis2"><PaginationEllipsis /></PaginationItem>);
       }
       items.push(
-        <PaginationItem key={totalPages}>
+        <PaginationItem key={totalPagesParam}>
           <PaginationLink
-            onClick={() => setCurrentPage(totalPages)}
+            onClick={() => setPageFunc(totalPagesParam)}
             isActive={false}
             className="cursor-pointer"
           >
-            {totalPages}
+            {totalPagesParam}
           </PaginationLink>
         </PaginationItem>
       );
@@ -256,8 +302,12 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="products">Product Management</TabsTrigger>
+            <TabsTrigger value="users">
+              <Users className="h-4 w-4 mr-2" />
+              Users
+            </TabsTrigger>
             <TabsTrigger value="paypal">PayPal Configuration</TabsTrigger>
           </TabsList>
           
@@ -353,7 +403,7 @@ const AdminDashboard = () => {
                           />
                         </PaginationItem>
                         
-                        {renderPaginationItems()}
+                        {renderPaginationItems(currentPage, totalPages, setCurrentPage)}
                         
                         <PaginationItem>
                           <PaginationNext
@@ -370,6 +420,104 @@ const AdminDashboard = () => {
               <div className="bg-gray-100 p-8 rounded-lg text-center">
                 <h2 className="text-xl font-semibold mb-2">No products found</h2>
                 <p className="text-gray-600">No products have been submitted yet.</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="users" className="space-y-4">
+            {usersLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : users && users.length > 0 ? (
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          <UsersSortButton field="email">Email</UsersSortButton>
+                        </TableHead>
+                        <TableHead>
+                          <UsersSortButton field="first_name">First Name</UsersSortButton>
+                        </TableHead>
+                        <TableHead>
+                          <UsersSortButton field="last_name">Last Name</UsersSortButton>
+                        </TableHead>
+                        <TableHead>
+                          <UsersSortButton field="roles">Roles</UsersSortButton>
+                        </TableHead>
+                        <TableHead>Seller Status</TableHead>
+                        <TableHead>
+                          <UsersSortButton field="created_at">Joined</UsersSortButton>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.email}</TableCell>
+                          <TableCell>{user.first_name || '-'}</TableCell>
+                          <TableCell>{user.last_name || '-'}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 flex-wrap">
+                              {(user.roles || ['buyer']).map((role) => (
+                                <Badge 
+                                  key={role} 
+                                  variant={role === 'admin' ? 'destructive' : role === 'seller' ? 'default' : 'secondary'}
+                                >
+                                  {role}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {user.seller_status ? (
+                              <Badge variant={
+                                user.seller_status === 'approved' ? 'default' : 
+                                user.seller_status === 'pending' ? 'secondary' : 'destructive'
+                              }>
+                                {user.seller_status}
+                              </Badge>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>{format(new Date(user.created_at), "PPP")}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {usersTotalPages > 1 && (
+                  <div className="mt-6">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setUsersCurrentPage(Math.max(1, usersCurrentPage - 1))}
+                            className={usersCurrentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                        
+                        {renderPaginationItems(usersCurrentPage, usersTotalPages, setUsersCurrentPage)}
+                        
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => setUsersCurrentPage(Math.min(usersTotalPages, usersCurrentPage + 1))}
+                            className={usersCurrentPage === usersTotalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="bg-gray-100 p-8 rounded-lg text-center">
+                <h2 className="text-xl font-semibold mb-2">No users found</h2>
+                <p className="text-gray-600">No users have registered yet.</p>
               </div>
             )}
           </TabsContent>
