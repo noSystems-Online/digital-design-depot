@@ -176,9 +176,7 @@ export const createProduct = async (productData: ProductCreationData) => {
   try {
     const { data, error } = await supabase
       .from('products')
-      .insert([productData])
-      .select()
-      .single();
+      .insert([productData]);
 
     if (error) {
       throw error;
