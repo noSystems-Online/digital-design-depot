@@ -1,5 +1,4 @@
-
-import { ShoppingCart, Search, User, LogIn, LogOut, Store, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, Search, User, LogIn, LogOut, Store, LayoutDashboard, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -87,7 +86,10 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-white border shadow-lg z-50">
                 <DropdownMenuItem asChild>
-                  <Link to="/profile">Profile</Link>
+                  <Link to="/profile" className="flex items-center">
+                    <UserCircle className="h-4 w-4 mr-2" />
+                    Profile
+                  </Link>
                 </DropdownMenuItem>
                 {isAdmin && (
                    <>
@@ -111,7 +113,10 @@ const Header = () => {
                     </DropdownMenuItem>
                     {isSellerApproved && (
                       <DropdownMenuItem asChild>
-                        <Link to="/seller-dashboard">Seller Dashboard</Link>
+                        <Link to="/seller-dashboard" className="flex items-center">
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Seller Dashboard
+                        </Link>
                       </DropdownMenuItem>
                     )}
                   </>
