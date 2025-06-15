@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +21,19 @@ const SellerDashboard = () => {
     tags: "",
     files: null as File[] | null
   });
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState({
+    id: 0,
+    title: "",
+    description: "",
+    price: "",
+    category: "",
+    tags: "",
+    files: null as File[] | null
+  });
+  const [viewProduct, setViewProduct] = useState(null as any);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   // Mock seller data
   const sellerStats = {
@@ -33,9 +44,9 @@ const SellerDashboard = () => {
   };
 
   const products = [
-    { id: 1, title: "React Dashboard Template", price: 49, sales: 45, revenue: 2205, status: "active", category: "Templates" },
-    { id: 2, title: "Node.js API Starter", price: 29, sales: 32, revenue: 928, status: "active", category: "Code Scripts" },
-    { id: 3, title: "Vue Components Pack", price: 35, sales: 28, revenue: 980, status: "pending", category: "Components" }
+    { id: 1, title: "React Dashboard Template", price: 49, sales: 45, revenue: 2205, status: "active", category: "Templates", description: "A modern and responsive React dashboard template with beautiful UI components and charts.", tags: "react, dashboard, admin, template" },
+    { id: 2, title: "Node.js API Starter", price: 29, sales: 32, revenue: 928, status: "active", category: "Code Scripts", description: "Complete Node.js API starter kit with authentication, database integration, and best practices.", tags: "nodejs, api, backend, starter" },
+    { id: 3, title: "Vue Components Pack", price: 35, sales: 28, revenue: 980, status: "pending", category: "Components", description: "A collection of reusable Vue.js components for building modern web applications.", tags: "vue, components, ui, library" }
   ];
 
   const recentSales = [
@@ -47,9 +58,23 @@ const SellerDashboard = () => {
   const handleSubmitProduct = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("New product submitted:", newProduct);
-    // Here you would handle the product submission
-    setIsDialogOpen(false);
+    setIsAddDialogOpen(false);
     setNewProduct({
+      title: "",
+      description: "",
+      price: "",
+      category: "",
+      tags: "",
+      files: null
+    });
+  };
+
+  const handleEditProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Product updated:", editProduct);
+    setIsEditDialogOpen(false);
+    setEditProduct({
+      id: 0,
       title: "",
       description: "",
       price: "",
@@ -65,6 +90,30 @@ const SellerDashboard = () => {
     }
   };
 
+  const handleEditFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setEditProduct(prev => ({ ...prev, files: Array.from(e.target.files || []) }));
+    }
+  };
+
+  const openViewDialog = (product: any) => {
+    setViewProduct(product);
+    setIsViewDialogOpen(true);
+  };
+
+  const openEditDialog = (product: any) => {
+    setEditProduct({
+      id: product.id,
+      title: product.title,
+      description: product.description,
+      price: product.price.toString(),
+      category: product.category.toLowerCase(),
+      tags: product.tags,
+      files: null
+    });
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -75,7 +124,7 @@ const SellerDashboard = () => {
               <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
               <p className="text-gray-600">Manage your products and track your sales</p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                   <Plus className="h-4 w-4 mr-2" />
@@ -192,7 +241,7 @@ const SellerDashboard = () => {
                       <Upload className="h-4 w-4 mr-2" />
                       Submit for Review
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                       Cancel
                     </Button>
                   </div>
@@ -200,6 +249,163 @@ const SellerDashboard = () => {
               </DialogContent>
             </Dialog>
           </div>
+
+          {/* View Product Dialog */}
+          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Product Details</DialogTitle>
+              </DialogHeader>
+              {viewProduct && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Product Title</Label>
+                      <p className="text-lg font-semibold">{viewProduct.title}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Price</Label>
+                      <p className="text-lg font-semibold text-green-600">${viewProduct.price}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Category</Label>
+                      <p>{viewProduct.category}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Status</Label>
+                      <Badge variant={viewProduct.status === 'active' ? 'default' : 'secondary'}>
+                        {viewProduct.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Description</Label>
+                    <p className="text-gray-800 leading-relaxed">{viewProduct.description}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Tags</Label>
+                    <p className="text-gray-600">{viewProduct.tags}</p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Total Sales</p>
+                      <p className="text-2xl font-bold text-blue-600">{viewProduct.sales}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Revenue</p>
+                      <p className="text-2xl font-bold text-green-600">${viewProduct.revenue}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Your Earnings</p>
+                      <p className="text-2xl font-bold text-purple-600">${(viewProduct.revenue * 0.95).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Product Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Product</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleEditProduct} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-title">Product Title *</Label>
+                    <Input
+                      id="edit-title"
+                      value={editProduct.title}
+                      onChange={(e) => setEditProduct(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g., React Dashboard Template"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-price">Price (USD) *</Label>
+                    <Input
+                      id="edit-price"
+                      type="number"
+                      value={editProduct.price}
+                      onChange={(e) => setEditProduct(prev => ({ ...prev, price: e.target.value }))}
+                      placeholder="29"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-category">Category *</Label>
+                  <Select value={editProduct.category} onValueChange={(value) => setEditProduct(prev => ({ ...prev, category: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="software">Software Applications</SelectItem>
+                      <SelectItem value="templates">Website Templates</SelectItem>
+                      <SelectItem value="scripts">Code Scripts</SelectItem>
+                      <SelectItem value="resources">Design Resources</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-description">Product Description *</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editProduct.description}
+                    onChange={(e) => setEditProduct(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe your product, its features, and what makes it special..."
+                    rows={4}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-tags">Tags (comma separated)</Label>
+                  <Input
+                    id="edit-tags"
+                    value={editProduct.tags}
+                    onChange={(e) => setEditProduct(prev => ({ ...prev, tags: e.target.value }))}
+                    placeholder="react, dashboard, admin, template"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-files">Update Product Files (optional)</Label>
+                  <Input
+                    id="edit-files"
+                    type="file"
+                    onChange={handleEditFileUpload}
+                    multiple
+                    accept=".zip,.rar,.7z,.tar.gz"
+                    className="cursor-pointer"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Leave empty to keep existing files. Upload new files to replace them.
+                  </p>
+                </div>
+
+                <div className="flex gap-4">
+                  <Button type="submit" className="flex-1">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Product
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* Process Overview */}
           <Card className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200">
@@ -322,11 +528,11 @@ const SellerDashboard = () => {
                           <Badge variant={product.status === 'active' ? 'default' : product.status === 'pending' ? 'secondary' : 'destructive'}>
                             {product.status}
                           </Badge>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => openViewDialog(product)}>
                             <Eye className="h-4 w-4 mr-1" />
                             View
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => openEditDialog(product)}>
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
                           </Button>
