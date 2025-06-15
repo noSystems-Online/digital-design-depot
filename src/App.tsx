@@ -22,6 +22,8 @@ import NotFound from "./pages/NotFound";
 import NewSellerDashboard from "./pages/NewSellerDashboard";
 import ProductUpload from "./pages/ProductUpload";
 import SellerRoute from "./components/SellerRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRoute from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,11 @@ const App = () => (
               <Route element={<SellerRoute />}>
                 <Route path="/seller-dashboard" element={<NewSellerDashboard />} />
                 <Route path="/product-upload" element={<ProductUpload />} />
+              </Route>
+
+              {/* Protected Admin Routes */}
+              <Route element={<AdminRoute />}>
+                <Route path="/admin-dashboard" element={<AdminDashboard />} />
               </Route>
               
               <Route path="/product/:id" element={<ProductDetails />} />

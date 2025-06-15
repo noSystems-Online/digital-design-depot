@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Product {
@@ -55,6 +54,41 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
   }
 };
 
+export const fetchPendingProducts = async (): Promise<Product[]> => {
+  try {
+    const query = supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', false);
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching pending products:', error);
+      return [];
+    }
+
+    // Transform the data to match the expected format
+    return data.map(product => ({
+      id: product.id,
+      title: product.title,
+      description: product.description || '',
+      price: parseFloat(product.price.toString()),
+      rating: 4.5, // Default rating since we don't have reviews yet
+      reviews: 0, // Default reviews count
+      image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
+      tags: product.tags || [],
+      category: product.category,
+      seller_id: product.seller_id,
+      download_url: product.download_url,
+      created_at: product.created_at
+    }));
+  } catch (error) {
+    console.error('Error in fetchPendingProducts:', error);
+    return [];
+  }
+};
+
 export const fetchProductById = async (id: string): Promise<Product | null> => {
   try {
     const { data, error } = await supabase
@@ -86,6 +120,44 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
   } catch (error) {
     console.error('Error in fetchProductById:', error);
     return null;
+  }
+};
+
+export const updateProductStatus = async (productId: string, isActive: boolean) => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .update({ is_active: isActive })
+      .eq('id', productId)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error updating product status:', error);
+    return { success: false, error };
+  }
+};
+
+export const deleteProduct = async (productId: string) => {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId);
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    return { success: false, error };
   }
 };
 

@@ -1,5 +1,5 @@
 
-import { ShoppingCart, Search, User, LogIn, LogOut, Store } from "lucide-react";
+import { ShoppingCart, Search, User, LogIn, LogOut, Store, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -15,12 +15,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const Header = () => {
-  const { isLoggedIn, user, logout, isSeller, isSellerApproved, loading } = useAuth();
+  const { isLoggedIn, user, logout, isSeller, isSellerApproved, isAdmin, loading } = useAuth();
   const { getTotalItems } = useCart();
   const totalItems = getTotalItems();
 
   // Debug logging
-  console.log('Header auth state:', { isLoggedIn, user, loading });
+  console.log('Header auth state:', { isLoggedIn, user, loading, isAdmin });
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -73,9 +73,14 @@ const Header = () => {
                 <Button variant="ghost" size="sm" className="flex items-center">
                   <User className="h-4 w-4 mr-2" />
                   {user?.name}
-                  {isSeller && (
+                  {isSeller && !isAdmin && (
                     <Badge variant="secondary" className="ml-2 text-xs">
                       {isSellerApproved ? 'Seller' : 'Pending'}
+                    </Badge>
+                  )}
+                  {isAdmin && (
+                    <Badge variant="destructive" className="ml-2 text-xs">
+                      Admin
                     </Badge>
                   )}
                 </Button>
@@ -84,6 +89,17 @@ const Header = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/profile">Profile</Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                   <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin-dashboard" className="flex items-center">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {isSeller && (
                   <>
                     <DropdownMenuSeparator />
@@ -100,7 +116,7 @@ const Header = () => {
                     )}
                   </>
                 )}
-                {!isSeller && (
+                {!isSeller && !isAdmin && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -23,6 +22,7 @@ interface AuthContextType {
   isBuyer: boolean;
   isSeller: boolean;
   isSellerApproved: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
@@ -176,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isBuyer = user?.roles.includes('buyer') || false;
   const isSeller = user?.roles.includes('seller') || false;
   const isSellerApproved = isSeller && user?.sellerStatus === 'approved';
+  const isAdmin = user?.roles.includes('admin') || false;
 
   return (
     <AuthContext.Provider value={{
@@ -184,6 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isBuyer,
       isSeller,
       isSellerApproved,
+      isAdmin,
       login,
       loginWithGoogle,
       logout,
