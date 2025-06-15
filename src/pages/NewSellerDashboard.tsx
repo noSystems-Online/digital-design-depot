@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductDataTable from "@/components/ProductDataTable";
+import ProductViewModal from "@/components/ProductViewModal";
+import ProductEditModal from "@/components/ProductEditModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import { fetchProductsBySeller, updateProductStatus } from "@/services/productService";
@@ -28,6 +30,9 @@ const NewSellerDashboard = () => {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Fetch products from database
   useEffect(() => {
@@ -68,13 +73,24 @@ const NewSellerDashboard = () => {
   }, [user?.id, toast]);
 
   const handleViewProduct = (product: Product) => {
-    console.log("Viewing product:", product);
-    // You can implement a view modal here if needed
+    setSelectedProduct(product);
+    setIsViewModalOpen(true);
   };
 
   const handleEditProduct = (product: Product) => {
-    console.log("Editing product:", product);
-    // You can implement edit functionality here
+    setSelectedProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProduct = (updatedProduct: Product) => {
+    // Update the product in the local state
+    setProducts(prev => prev.map(p => 
+      p.id === updatedProduct.id ? updatedProduct : p
+    ));
+    
+    // Here you would typically make an API call to update the product in the database
+    // For now, we'll just update the local state
+    console.log('Product updated:', updatedProduct);
   };
 
   const handleToggleProductStatus = async (product: Product) => {
@@ -143,6 +159,26 @@ const NewSellerDashboard = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Modals */}
+      <ProductViewModal
+        product={selectedProduct}
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedProduct(null);
+        }}
+      />
+
+      <ProductEditModal
+        product={selectedProduct}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSave={handleSaveProduct}
+      />
     </div>
   );
 };

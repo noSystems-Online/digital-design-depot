@@ -17,6 +17,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProductDetails from "./pages/ProductDetails";
 import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutCancel from "./pages/CheckoutCancel";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import NewSellerDashboard from "./pages/NewSellerDashboard";
@@ -43,6 +45,8 @@ const App = () => (
               <Route path="/resources" element={<Resources />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
               <Route path="/sell" element={<SellerRegistration />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
