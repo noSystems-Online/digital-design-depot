@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,8 @@ interface ProductGridProps {
 }
 
 const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, category }: ProductGridProps) => {
-  const [displayCount, setDisplayCount] = useState<number>(itemsPerPage);
+  const itemsPerPageNumber = Number(itemsPerPage);
+  const [displayCount, setDisplayCount] = useState<number>(itemsPerPageNumber);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
@@ -47,7 +47,7 @@ const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, c
   const hasMore = displayCount < filteredProducts.length;
 
   const loadMore = () => {
-    setDisplayCount(prev => Math.min(prev + Number(itemsPerPage), filteredProducts.length));
+    setDisplayCount(prev => Math.min(prev + itemsPerPageNumber, filteredProducts.length));
   };
 
   const handleAddToCart = (product: Product) => {
