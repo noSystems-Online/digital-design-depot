@@ -5,11 +5,111 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import SellerProductList from "@/components/SellerProductList";
+import ProductDataTable from "@/components/ProductDataTable";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from "react";
+import { fetchProductsBySeller, updateProductStatus } from "@/services/productService";
+import { useToast } from "@/hooks/use-toast";
+
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  sales: number;
+  revenue: number;
+  status: string;
+  category: string;
+  description: string;
+  tags: string;
+}
 
 const NewSellerDashboard = () => {
   const { user, loading } = useAuth();
+  const { toast } = useToast();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  // Fetch products from database
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setProductsLoading(true);
+        const fetchedProducts = await fetchProductsBySeller(user.id);
+        
+        // Transform the data to match the expected format for the table
+        const transformedProducts = fetchedProducts.map(product => ({
+          id: parseInt(product.id),
+          title: product.title,
+          price: product.price,
+          sales: 0, // Mock data for now as we don't have sales tracking yet
+          revenue: 0, // Mock data for now
+          status: product.is_active ? 'active' : 'pending',
+          category: product.category,
+          description: product.description,
+          tags: Array.isArray(product.tags) ? product.tags.join(', ') : ''
+        }));
+        
+        setProducts(transformedProducts);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load products",
+          variant: "destructive"
+        });
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [user?.id, toast]);
+
+  const handleViewProduct = (product: Product) => {
+    console.log("Viewing product:", product);
+    // You can implement a view modal here if needed
+  };
+
+  const handleEditProduct = (product: Product) => {
+    console.log("Editing product:", product);
+    // You can implement edit functionality here
+  };
+
+  const handleToggleProductStatus = async (product: Product) => {
+    try {
+      const newStatus = product.status === 'active' ? false : true;
+      const result = await updateProductStatus(product.id.toString(), newStatus);
+      
+      if (result.success) {
+        // Update local state
+        setProducts(prev => prev.map(p => 
+          p.id === product.id 
+            ? { ...p, status: newStatus ? 'active' : 'pending' }
+            : p
+        ));
+        
+        toast({
+          title: "Success",
+          description: `Product ${newStatus ? 'activated' : 'deactivated'} successfully`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update product status",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling product status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -24,14 +124,19 @@ const NewSellerDashboard = () => {
           </Link>
         </div>
         <div>
-          {loading ? (
+          {loading || productsLoading ? (
             <div className="space-y-2">
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
             </div>
           ) : user ? (
-            <SellerProductList sellerId={user.id} />
+            <ProductDataTable
+              products={products}
+              onView={handleViewProduct}
+              onEdit={handleEditProduct}
+              onToggleStatus={handleToggleProductStatus}
+            />
           ) : (
             <p>Please log in to see your dashboard.</p>
           )}
