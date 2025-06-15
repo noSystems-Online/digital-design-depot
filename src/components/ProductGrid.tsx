@@ -12,13 +12,13 @@ interface ProductGridProps {
   searchTerm: string;
   gradientFrom: string;
   gradientTo: string;
-  itemsPerPage?: number;
+  itemsPerPage?: number | string;
   category?: string;
 }
 
 const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, category }: ProductGridProps) => {
   // Ensure itemsPerPage is always a number
-  const itemsPerPageNumber = Number(itemsPerPage) || 8;
+  const itemsPerPageNumber = typeof itemsPerPage === 'string' ? parseInt(itemsPerPage, 10) || 8 : Number(itemsPerPage) || 8;
   const [displayCount, setDisplayCount] = useState<number>(itemsPerPageNumber);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
