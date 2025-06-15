@@ -19,6 +19,9 @@ const Header = () => {
   const { getTotalItems } = useCart();
   const totalItems = getTotalItems();
 
+  // Debug logging
+  console.log('Header auth state:', { isLoggedIn, user, loading });
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -77,7 +80,7 @@ const Header = () => {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-white border shadow-lg z-50">
                 <DropdownMenuItem asChild>
                   <Link to="/profile">Profile</Link>
                 </DropdownMenuItem>
@@ -117,7 +120,7 @@ const Header = () => {
             </DropdownMenu>
           ) : (
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="flex items-center">
+              <Button variant="ghost" size="sm" className="flex items-center bg-blue-600 text-white hover:bg-blue-700">
                 <LogIn className="h-4 w-4 mr-2" />
                 Login
               </Button>
