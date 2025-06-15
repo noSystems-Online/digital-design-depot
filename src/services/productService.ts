@@ -56,6 +56,41 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
   }
 };
 
+export const fetchAllProductsForAdmin = async (): Promise<Product[]> => {
+  try {
+    const query = supabase
+      .from('products')
+      .select('*');
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching all products for admin:', error);
+      return [];
+    }
+
+    // Transform the data to match the expected format
+    return data.map(product => ({
+      id: product.id,
+      title: product.title,
+      description: product.description || '',
+      price: parseFloat(product.price.toString()),
+      rating: 4.5, // Default rating since we don't have reviews yet
+      reviews: 0, // Default reviews count
+      image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
+      tags: product.tags || [],
+      category: product.category,
+      seller_id: product.seller_id,
+      download_url: product.download_url,
+      created_at: product.created_at,
+      is_active: product.is_active,
+    }));
+  } catch (error) {
+    console.error('Error in fetchAllProductsForAdmin:', error);
+    return [];
+  }
+};
+
 export const fetchPendingProducts = async (): Promise<Product[]> => {
   try {
     const query = supabase

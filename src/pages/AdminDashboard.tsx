@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchPendingProducts, updateProductStatus, deleteProduct, Product } from "@/services/productService";
+import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product } from "@/services/productService";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
@@ -15,20 +15,21 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: products, isLoading, error } = useQuery({
-    queryKey: ['pendingProducts'],
-    queryFn: fetchPendingProducts,
+    queryKey: ['allAdminProducts'],
+    queryFn: fetchAllProductsForAdmin,
   });
 
   const approveMutation = useMutation({
     mutationFn: (productId: string) => updateProductStatus(productId, true),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['allAdminProducts'] });
       toast({
         title: "Success",
         description: "Product approved successfully.",
@@ -43,19 +44,19 @@ const AdminDashboard = () => {
     },
   });
 
-  const rejectMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['allAdminProducts'] });
       toast({
         title: "Success",
-        description: "Product rejected and deleted successfully.",
+        description: "Product deleted successfully.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to reject product: ${error.message}`,
+        description: `Failed to delete product: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -65,19 +66,19 @@ const AdminDashboard = () => {
     approveMutation.mutate(productId);
   };
 
-  const handleReject = (productId: string) => {
-    rejectMutation.mutate(productId);
+  const handleDelete = (productId: string) => {
+    deleteMutation.mutate(productId);
   };
 
   if (error) {
-    return <div>Error loading pending products: {error.message}</div>;
+    return <div>Error loading products: {error.message}</div>;
   }
   
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard - Pending Products</h1>
+        <h1 className="text-3xl font-bold mb-8">Admin Dashboard - All Products</h1>
         
         {isLoading ? (
           <div className="space-y-4">
@@ -93,6 +94,7 @@ const AdminDashboard = () => {
                   <TableHead>Product</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Submitted On</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -101,25 +103,30 @@ const AdminDashboard = () => {
                 {products.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.title}</TableCell>
-                    <TableCell>{product.category}</TableCell>
+                    <TableCell className="capitalize">{product.category}</TableCell>
                     <TableCell>${product.price.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                        {product.is_active ? 'Approved' : 'Pending'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{format(new Date(product.created_at), "PPP")}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleApprove(product.id)}
-                        disabled={approveMutation.isPending}
+                        disabled={approveMutation.isPending || product.is_active}
                       >
                         Approve
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleReject(product.id)}
-                        disabled={rejectMutation.isPending}
+                        onClick={() => handleDelete(product.id)}
+                        disabled={deleteMutation.isPending}
                       >
-                        Reject
+                        Delete
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -129,8 +136,8 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <div className="bg-gray-100 p-8 rounded-lg text-center">
-            <h2 className="text-xl font-semibold mb-2">No pending products</h2>
-            <p className="text-gray-600">There are no products awaiting approval at the moment.</p>
+            <h2 className="text-xl font-semibold mb-2">No products found</h2>
+            <p className="text-gray-600">No products have been submitted yet.</p>
           </div>
         )}
       </main>
