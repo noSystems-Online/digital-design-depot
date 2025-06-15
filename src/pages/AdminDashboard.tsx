@@ -59,6 +59,12 @@ const AdminDashboard = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // Product filters
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all');
+  const [productStatusFilter, setProductStatusFilter] = useState<string>('all');
+  const [productSellerFilter, setProductSellerFilter] = useState<string>('all');
+  
   // Users tab state
   const [usersCurrentPage, setUsersCurrentPage] = useState(1);
   const [usersSortField, setUsersSortField] = useState<UserSortField>('created_at');
@@ -162,10 +168,34 @@ const AdminDashboard = () => {
     setUsersCurrentPage(1);
   };
 
-  const sortedProducts = useMemo(() => {
+  const filteredAndSortedProducts = useMemo(() => {
     if (!products) return [];
     
-    return [...products].sort((a, b) => {
+    // Filter products
+    let filtered = products.filter(product => {
+      // Search filter
+      const matchesSearch = productSearchTerm === '' || 
+        product.title.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+        (product.description && product.description.toLowerCase().includes(productSearchTerm.toLowerCase()));
+
+      // Category filter
+      const matchesCategory = productCategoryFilter === 'all' || 
+        product.category === productCategoryFilter;
+
+      // Status filter
+      const matchesStatus = productStatusFilter === 'all' ||
+        (productStatusFilter === 'active' && product.is_active) ||
+        (productStatusFilter === 'pending' && !product.is_active);
+
+      // Seller filter
+      const matchesSeller = productSellerFilter === 'all' ||
+        product.seller_id === productSellerFilter;
+
+      return matchesSearch && matchesCategory && matchesStatus && matchesSeller;
+    });
+    
+    // Sort products
+    return filtered.sort((a, b) => {
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
       
@@ -194,7 +224,7 @@ const AdminDashboard = () => {
         return aValue < bValue ? 1 : -1;
       }
     });
-  }, [products, sortField, sortDirection, sellers]);
+  }, [products, sortField, sortDirection, sellers, productSearchTerm, productCategoryFilter, productStatusFilter, productSellerFilter]);
 
   const filteredAndSortedUsers = useMemo(() => {
     if (!users) return [];
@@ -247,16 +277,30 @@ const AdminDashboard = () => {
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedProducts, currentPage]);
+    return filteredAndSortedProducts.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedProducts, currentPage]);
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (usersCurrentPage - 1) * itemsPerPage;
     return filteredAndSortedUsers.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredAndSortedUsers, usersCurrentPage]);
 
-  const totalPages = Math.ceil((sortedProducts?.length || 0) / itemsPerPage);
+  const totalPages = Math.ceil((filteredAndSortedProducts?.length || 0) / itemsPerPage);
   const usersTotalPages = Math.ceil((filteredAndSortedUsers?.length || 0) / itemsPerPage);
+
+  // Get unique categories and sellers for filter dropdowns
+  const uniqueCategories = useMemo(() => {
+    if (!products) return [];
+    return [...new Set(products.map(p => p.category))];
+  }, [products]);
+
+  const uniqueSellers = useMemo(() => {
+    if (!products || !sellers) return [];
+    return [...new Set(products.map(p => p.seller_id))].map(sellerId => ({
+      id: sellerId,
+      name: sellers[sellerId]?.businessName || 'Unknown Seller'
+    }));
+  }, [products, sellers]);
 
   const handleApprove = (productId: string) => {
     approveMutation.mutate(productId);
@@ -382,6 +426,65 @@ const AdminDashboard = () => {
           </TabsList>
           
           <TabsContent value="products" className="space-y-4">
+            {/* Product filter controls */}
+            <div className="flex gap-4 items-center mb-4 bg-gray-50 p-4 rounded-lg flex-wrap">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search products..."
+                  value={productSearchTerm}
+                  onChange={(e) => setProductSearchTerm(e.target.value)}
+                  className="w-64"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <Select value={productCategoryFilter} onValueChange={setProductCategoryFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {uniqueCategories.map((category) => (
+                      <SelectItem key={category} value={category} className="capitalize">
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Select value={productStatusFilter} onValueChange={setProductStatusFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Approved</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Select value={productSellerFilter} onValueChange={setProductSellerFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by seller" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sellers</SelectItem>
+                    {uniqueSellers.map((seller) => (
+                      <SelectItem key={seller.id} value={seller.id}>
+                        {seller.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {isLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-12 w-full" />
@@ -460,6 +563,12 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+                
+                <div className="text-sm text-gray-600 mb-2">
+                  Showing {paginatedProducts.length} of {filteredAndSortedProducts.length} products
+                  {productSearchTerm || productCategoryFilter !== 'all' || productStatusFilter !== 'all' || productSellerFilter !== 'all' ? 
+                    ` (filtered from ${products.length} total)` : ''}
                 </div>
                 
                 {totalPages > 1 && (
