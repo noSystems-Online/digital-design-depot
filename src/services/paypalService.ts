@@ -40,7 +40,11 @@ export const getPayPalConfig = async (): Promise<PayPalConfig> => {
     };
   }
 
-  return data;
+  return {
+    client_id: data.client_id,
+    environment: data.environment as 'sandbox' | 'live',
+    is_active: data.is_active
+  };
 };
 
 export const createPayPalOrder = async (

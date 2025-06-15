@@ -84,7 +84,10 @@ const PayPalConfigManager = () => {
 
   useEffect(() => {
     if (paypalConfig) {
-      setConfig(paypalConfig);
+      setConfig({
+        ...paypalConfig,
+        environment: paypalConfig.environment as 'sandbox' | 'live'
+      });
     }
   }, [paypalConfig]);
 
