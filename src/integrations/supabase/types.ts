@@ -213,6 +213,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_all_users_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          first_name: string
+          last_name: string
+          roles: Database["public"]["Enums"]["user_role"][]
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          created_at: string
+        }[]
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
