@@ -1,13 +1,19 @@
 
-import { ShoppingCart, Search, User, LogIn } from "lucide-react";
+import { ShoppingCart, Search, User, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
-  // Mock authentication state - in real app, this would come from auth context
-  const isLoggedIn = false;
+  const { isLoggedIn, user, logout } = useAuth();
   const { getTotalItems } = useCart();
   const totalItems = getTotalItems();
 
@@ -51,11 +57,28 @@ const Header = () => {
           </div>
           
           {isLoggedIn ? (
-            <Link to="/profile">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  {user?.name}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">Profile</Link>
+                </DropdownMenuItem>
+                {user?.role === 'seller' && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/seller-dashboard">Dashboard</Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link to="/login">
               <Button variant="ghost" size="sm" className="flex items-center">

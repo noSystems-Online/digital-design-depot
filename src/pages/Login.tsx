@@ -6,19 +6,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Link } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", formData);
-    // Handle login logic here
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const result = await login(formData.email, formData.password);
+      if (result.success) {
+        navigate("/profile");
+      } else {
+        setError(result.error || "Login failed");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,6 +51,15 @@ const Login = () => {
               <p className="text-gray-600">Sign in to your CodeMarket account</p>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Demo Credentials Info */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 className="font-medium text-blue-900 mb-2">Demo Credentials:</h3>
+                <div className="text-sm text-blue-800 space-y-1">
+                  <p><strong>Buyer:</strong> buyer@demo.com / buyer123</p>
+                  <p><strong>Seller:</strong> seller@demo.com / seller123</p>
+                </div>
+              </div>
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="email">Email Address</Label>
@@ -55,8 +83,15 @@ const Login = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  Sign In
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
               
