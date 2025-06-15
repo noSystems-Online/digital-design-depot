@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, c
   const hasMore = displayCount < filteredProducts.length;
 
   const loadMore = () => {
-    setDisplayCount(prev => Math.min(prev + itemsPerPage, filteredProducts.length));
+    setDisplayCount(prev => Math.min(prev + Number(itemsPerPage), filteredProducts.length));
   };
 
   const handleAddToCart = (product: Product) => {
