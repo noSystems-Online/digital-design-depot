@@ -92,6 +92,33 @@ export type Database = {
           },
         ]
       }
+      paypal_config: {
+        Row: {
+          client_id: string
+          created_at: string
+          environment: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          environment: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: Database["public"]["Enums"]["product_category"]
