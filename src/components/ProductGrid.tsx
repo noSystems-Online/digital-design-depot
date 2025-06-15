@@ -17,8 +17,7 @@ interface ProductGridProps {
 }
 
 const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, category }: ProductGridProps) => {
-  const itemsPerPageNumber = Number(itemsPerPage);
-  const [displayCount, setDisplayCount] = useState<number>(itemsPerPageNumber);
+  const [displayCount, setDisplayCount] = useState<number>(itemsPerPage);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
@@ -47,7 +46,7 @@ const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, c
   const hasMore = displayCount < filteredProducts.length;
 
   const loadMore = () => {
-    setDisplayCount(prev => Math.min(prev + itemsPerPageNumber, filteredProducts.length));
+    setDisplayCount(prev => Math.min(prev + itemsPerPage, filteredProducts.length));
   };
 
   const handleAddToCart = (product: Product) => {
