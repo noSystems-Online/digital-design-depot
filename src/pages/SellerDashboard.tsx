@@ -87,12 +87,13 @@ const SellerDashboard = () => {
   }, [user?.id, toast]);
 
   const [newProduct, setNewProduct] = useState({
-    title: "",
+    appName: "",
     description: "",
     price: "",
     category: "",
-    tags: "",
-    files: null as File[] | null
+    imageUrl: "",
+    previewUrl: "",
+    downloadUrl: ""
   });
   const [editProduct, setEditProduct] = useState({
     id: 0,
@@ -111,14 +112,19 @@ const SellerDashboard = () => {
   const handleSubmitProduct = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("New product submitted:", newProduct);
+    toast({
+      title: "Product Submitted",
+      description: "Your product has been submitted for review",
+    });
     setIsAddDialogOpen(false);
     setNewProduct({
-      title: "",
+      appName: "",
       description: "",
       price: "",
       category: "",
-      tags: "",
-      files: null
+      imageUrl: "",
+      previewUrl: "",
+      downloadUrl: ""
     });
   };
 
@@ -135,18 +141,6 @@ const SellerDashboard = () => {
       tags: "",
       files: null
     });
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setNewProduct(prev => ({ ...prev, files: Array.from(e.target.files || []) }));
-    }
-  };
-
-  const handleEditFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setEditProduct(prev => ({ ...prev, files: Array.from(e.target.files || []) }));
-    }
   };
 
   const openViewDialog = (product: any) => {
@@ -242,47 +236,19 @@ const SellerDashboard = () => {
                   <DialogTitle>Add New Product</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmitProduct} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="title">Product Title *</Label>
-                      <Input
-                        id="title"
-                        value={newProduct.title}
-                        onChange={(e) => setNewProduct(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="e.g., React Dashboard Template"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="price">Price (USD) *</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        value={newProduct.price}
-                        onChange={(e) => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
-                        placeholder="29"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="appName">App Name *</Label>
+                    <Input
+                      id="appName"
+                      value={newProduct.appName}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, appName: e.target.value }))}
+                      placeholder="e.g., React Dashboard Template"
+                      required
+                    />
                   </div>
 
                   <div>
-                    <Label htmlFor="category">Category *</Label>
-                    <Select value={newProduct.category} onValueChange={(value) => setNewProduct(prev => ({ ...prev, category: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="software">Software Applications</SelectItem>
-                        <SelectItem value="templates">Website Templates</SelectItem>
-                        <SelectItem value="scripts">Code Scripts</SelectItem>
-                        <SelectItem value="resources">Design Resources</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Product Description *</Label>
+                    <Label htmlFor="description">Description *</Label>
                     <Textarea
                       id="description"
                       value={newProduct.description}
@@ -293,42 +259,78 @@ const SellerDashboard = () => {
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="tags">Tags (comma separated)</Label>
-                    <Input
-                      id="tags"
-                      value={newProduct.tags}
-                      onChange={(e) => setNewProduct(prev => ({ ...prev, tags: e.target.value }))}
-                      placeholder="react, dashboard, admin, template"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="price">Price (USD) *</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        value={newProduct.price}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
+                        placeholder="29.99"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="category">Category *</Label>
+                      <Select value={newProduct.category} onValueChange={(value) => setNewProduct(prev => ({ ...prev, category: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="software">Software Applications</SelectItem>
+                          <SelectItem value="templates">Website Templates</SelectItem>
+                          <SelectItem value="code-scripts">Code Scripts</SelectItem>
+                          <SelectItem value="resources">Design Resources</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="files">Upload Product Files *</Label>
+                    <Label htmlFor="imageUrl">Image URL *</Label>
                     <Input
-                      id="files"
-                      type="file"
-                      onChange={handleFileUpload}
-                      multiple
-                      accept=".zip,.rar,.7z,.tar.gz"
-                      className="cursor-pointer"
+                      id="imageUrl"
+                      type="url"
+                      value={newProduct.imageUrl}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, imageUrl: e.target.value }))}
+                      placeholder="https://example.com/product-image.png"
+                      required
                     />
                     <p className="text-sm text-gray-600 mt-1">
-                      Upload your product files (ZIP, RAR, 7Z, TAR.GZ). Max 100MB per file.
+                      URL to the main product image/screenshot
                     </p>
-                    {newProduct.files && (
-                      <div className="mt-2">
-                        <p className="text-sm font-medium">Selected files:</p>
-                        <ul className="text-sm text-gray-600">
-                          {newProduct.files.map((file, index) => (
-                            <li key={index} className="flex items-center">
-                              <FileText className="h-4 w-4 mr-1" />
-                              {file.name}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="previewUrl">Preview URL *</Label>
+                    <Input
+                      id="previewUrl"
+                      type="url"
+                      value={newProduct.previewUrl}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, previewUrl: e.target.value }))}
+                      placeholder="https://example.com/demo"
+                      required
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      URL where users can preview or demo your product
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="downloadUrl">Download URL *</Label>
+                    <Input
+                      id="downloadUrl"
+                      type="url"
+                      value={newProduct.downloadUrl}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, downloadUrl: e.target.value }))}
+                      placeholder="https://example.com/download/product.zip"
+                      required
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      Direct download link to your product files
+                    </p>
                   </div>
 
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -483,21 +485,6 @@ const SellerDashboard = () => {
                     onChange={(e) => setEditProduct(prev => ({ ...prev, tags: e.target.value }))}
                     placeholder="react, dashboard, admin, template"
                   />
-                </div>
-
-                <div>
-                  <Label htmlFor="edit-files">Update Product Files (optional)</Label>
-                  <Input
-                    id="edit-files"
-                    type="file"
-                    onChange={handleEditFileUpload}
-                    multiple
-                    accept=".zip,.rar,.7z,.tar.gz"
-                    className="cursor-pointer"
-                  />
-                  <p className="text-sm text-gray-600 mt-1">
-                    Leave empty to keep existing files. Upload new files to replace them.
-                  </p>
                 </div>
 
                 <div className="flex gap-4">
