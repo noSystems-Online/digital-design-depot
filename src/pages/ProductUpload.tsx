@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,7 +20,8 @@ const productSchema = z.object({
   price: z.coerce.number().min(0.01, "Price must be a positive number"),
   category: z.enum(["software", "templates", "code-scripts", "resources"]),
   image_url: z.string().url("Please enter a valid image URL").or(z.literal("")).optional(),
-  download_url: z.string().url("Please enter a valid product file URL").or(z.literal("")).optional(),
+  demo_url: z.string().url("Please enter a valid demo URL").or(z.literal("")).optional(),
+  download_url: z.string().url("Please enter a valid download URL").or(z.literal("")).optional(),
   tags: z.string().optional(),
 });
 
@@ -39,6 +39,7 @@ const ProductUpload = () => {
       price: 0,
       category: "software",
       image_url: "",
+      demo_url: "",
       download_url: "",
       tags: "",
     },
@@ -171,10 +172,24 @@ const ProductUpload = () => {
               />
               <FormField
                 control={form.control}
+                name="demo_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Demo URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/demo" {...field} />
+                    </FormControl>
+                    <FormDescription>The link where customers can preview or demo your product.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="download_url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Product File URL</FormLabel>
+                    <FormLabel>Download URL</FormLabel>
                     <FormControl>
                       <Input placeholder="https://example.com/product.zip" {...field} />
                     </FormControl>
@@ -183,7 +198,7 @@ const ProductUpload = () => {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="tags"
                 render={({ field }) => (
