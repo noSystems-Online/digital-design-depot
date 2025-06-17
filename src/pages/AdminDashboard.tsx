@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
-import { ChevronUp, ChevronDown, Eye, users, Search, Filter, dollar-sign, settings } from "lucide-react";
+import { ChevronUp, ChevronDown, Eye, Users, Search, Filter, DollarSign, Settings } from "lucide-react";
 
 type SortField = 'title' | 'category' | 'price' | 'created_at' | 'is_active' | 'seller_id';
 type SortDirection = 'asc' | 'desc';
@@ -306,18 +306,18 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="products">Product Management</TabsTrigger>
             <TabsTrigger value="users">
-              <users className="h-4 w-4 mr-2" />
+              <Users className="h-4 w-4 mr-2" />
               Users
             </TabsTrigger>
             <TabsTrigger value="sales">
-              <dollar-sign className="h-4 w-4 mr-2" />
+              <DollarSign className="h-4 w-4 mr-2" />
               Sales Analytics
             </TabsTrigger>
             <TabsTrigger value="config">
-              <settings className="h-4 w-4 mr-2" />
+              <Settings className="h-4 w-4 mr-2" />
               App Config
             </TabsTrigger>
           </TabsList>

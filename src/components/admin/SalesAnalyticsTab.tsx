@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import { dollar-sign, file-text } from "lucide-react";
+import { DollarSign, FileText, Users } from "lucide-react";
 
 interface SalesData {
   id: string;
@@ -87,7 +87,7 @@ const SalesAnalyticsTab = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
-              <dollar-sign className="h-4 w-4 mr-2" />
+              <DollarSign className="h-4 w-4 mr-2" />
               Total Revenue
             </CardTitle>
           </CardHeader>
@@ -101,7 +101,7 @@ const SalesAnalyticsTab = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
-              <file-text className="h-4 w-4 mr-2" />
+              <FileText className="h-4 w-4 mr-2" />
               Total Orders
             </CardTitle>
           </CardHeader>
@@ -115,7 +115,7 @@ const SalesAnalyticsTab = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
-              <users className="h-4 w-4 mr-2" />
+              <Users className="h-4 w-4 mr-2" />
               Active Sellers
             </CardTitle>
           </CardHeader>
