@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +52,7 @@ const SalesAnalyticsTab = () => {
         total_amount: order.total_amount,
         created_at: order.created_at,
         buyer_email: order.profiles?.email || 'Unknown',
-        seller_business_name: order.order_items[0]?.products?.profiles?.seller_info?.businessName || 'Unknown',
+        seller_business_name: (order.order_items[0]?.products?.profiles?.seller_info as any)?.businessName || 'Unknown',
         product_titles: order.order_items.map(item => item.products?.title || 'Unknown Product')
       })) as SalesData[];
     },

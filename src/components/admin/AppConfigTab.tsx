@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 interface PayPalConfig {
   id: string;
@@ -125,7 +124,7 @@ const AppConfigTab = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <settings className="h-5 w-5 mr-2" />
+            <Settings className="h-5 w-5 mr-2" />
             PayPal Configuration
           </CardTitle>
         </CardHeader>
