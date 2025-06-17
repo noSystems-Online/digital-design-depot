@@ -65,6 +65,26 @@ const Checkout = () => {
   const tax = subtotal * 0.1; // 10% tax
   const total = subtotal + tax;
 
+  const createStripePayment = async () => {
+    const paymentData = {
+      amount: total,
+      currency: 'USD',
+      description: `Purchase of ${cartItems.length} item(s)`,
+      billingInfo: formData,
+      items: cartItems
+    };
+
+    const { data, error } = await supabase.functions.invoke('create-stripe-payment', {
+      body: paymentData
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,7 +110,18 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      if (paymentMethod === 'paypal') {
+      if (paymentMethod === 'stripe') {
+        console.log("Creating Stripe payment:", { formData, paymentMethod, total, cartItems });
+
+        const result = await createStripePayment();
+
+        if (result.success && result.url) {
+          // Redirect to Stripe Checkout
+          window.location.href = result.url;
+        } else {
+          throw new Error(result.error || 'Stripe payment creation failed');
+        }
+      } else if (paymentMethod === 'paypal') {
         const paymentData = {
           amount: total,
           currency: 'USD',
@@ -266,6 +297,13 @@ const Checkout = () => {
                   </CardHeader>
                   <CardContent>
                     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                        <RadioGroupItem value="stripe" id="stripe" />
+                        <Label htmlFor="stripe" className="flex items-center cursor-pointer">
+                          <CreditCard className="h-5 w-5 mr-2 text-purple-600" />
+                          Credit Card (Stripe)
+                        </Label>
+                      </div>
                       <div className="flex items-center space-x-2 p-4 border rounded-lg">
                         <RadioGroupItem value="paypal" id="paypal" />
                         <Label htmlFor="paypal" className="flex items-center cursor-pointer">

@@ -50,10 +50,10 @@ serve(async (req) => {
 
     console.log('Capturing PayPal order:', orderId);
 
-    // Get PayPal access token using the config
+    // Get PayPal access token
     const accessToken = await getPayPalAccessToken(config.client_id, config.environment);
 
-    // Capture PayPal order
+    // Capture the payment
     const paypalUrl = config.environment === 'sandbox' 
       ? 'https://api.sandbox.paypal.com'
       : 'https://api.paypal.com';
@@ -67,35 +67,51 @@ serve(async (req) => {
     });
 
     if (!captureResponse.ok) {
-      const errorData = await captureResponse.text();
-      console.error('PayPal capture error:', errorData);
       throw new Error('Failed to capture PayPal payment');
     }
 
     const captureData = await captureResponse.json();
     console.log('PayPal payment captured:', captureData);
 
-    // Update order status in database
-    const { error: updateError } = await supabase
+    // Find the order by PayPal order ID in billing_info
+    const { data: orders, error: fetchError } = await supabase
+      .from('orders')
+      .select('*')
+      .contains('billing_info', { paypal_order_id: orderId });
+
+    if (fetchError) {
+      throw new Error(`Failed to find order: ${fetchError.message}`);
+    }
+
+    if (!orders || orders.length === 0) {
+      throw new Error('Order not found');
+    }
+
+    const order = orders[0];
+
+    // Update order status to completed
+    const { data: updatedOrder, error: updateError } = await supabase
       .from('orders')
       .update({ 
         status: 'completed',
-        billing_info: { 
-          paypal_capture_id: captureData.id,
-          paypal_status: captureData.status 
-        }
+        updated_at: new Date().toISOString()
       })
-      .eq('billing_info->paypal_order_id', orderId);
+      .eq('id', order.id)
+      .select()
+      .single();
 
     if (updateError) {
       console.error('Failed to update order status:', updateError);
+      throw new Error(`Failed to update order status: ${updateError.message}`);
     }
+
+    console.log('Order status updated to completed:', updatedOrder.id);
 
     return new Response(
       JSON.stringify({
         success: true,
-        captureId: captureData.id,
-        status: captureData.status
+        order: updatedOrder,
+        paypalData: captureData
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -106,7 +122,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('PayPal capture error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message 
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,

@@ -96,6 +96,11 @@ export const capturePayPalOrder = async (orderId: string) => {
       throw new Error(error.message);
     }
 
+    // Check if the response indicates success
+    if (data && data.success === false) {
+      throw new Error(data.error || 'PayPal capture failed');
+    }
+
     return data;
   } catch (error) {
     console.error('PayPal order capture error:', error);

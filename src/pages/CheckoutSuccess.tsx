@@ -23,6 +23,7 @@ const CheckoutSuccess = () => {
 
   const token = searchParams.get('token');
   const payerId = searchParams.get('PayerID');
+  const sessionId = searchParams.get('session_id');
 
   const sendDownloadEmail = async (email: string, links: string[], orderData: any) => {
     try {
@@ -76,21 +77,40 @@ const CheckoutSuccess = () => {
     return links;
   };
 
-  useEffect(() => {
-    const processPayment = async () => {
-      if (!token || !payerId) {
-        toast({
-          title: "Invalid Payment",
-          description: "Missing payment information",
-          variant: "destructive"
-        });
-        navigate('/cart');
-        return;
+  const verifyStripePayment = async (sessionId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-stripe-payment', {
+        body: { sessionId }
+      });
+
+      if (error) {
+        throw new Error(error.message);
       }
 
+      return data;
+    } catch (error) {
+      console.error('Stripe verification error:', error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const processPayment = async () => {
       try {
-        const result = await capturePayPalOrder(token);
-        
+        let result;
+
+        if (sessionId) {
+          // Stripe payment
+          console.log('Processing Stripe payment verification for session:', sessionId);
+          result = await verifyStripePayment(sessionId);
+        } else if (token && payerId) {
+          // PayPal payment
+          console.log('Processing PayPal payment capture for token:', token);
+          result = await capturePayPalOrder(token);
+        } else {
+          throw new Error('Missing payment information');
+        }
+
         if (result.success) {
           setOrderDetails(result.order);
           
@@ -117,22 +137,27 @@ const CheckoutSuccess = () => {
             description: "Your order has been completed successfully!",
           });
         } else {
-          throw new Error(result.error || 'Payment capture failed');
+          throw new Error(result.error || 'Payment processing failed');
         }
       } catch (error) {
-        console.error('Payment capture error:', error);
+        console.error('Payment processing error:', error);
         toast({
           title: "Payment Processing Failed",
           description: "There was an issue processing your payment. Please contact support.",
           variant: "destructive"
         });
+        
+        // Redirect to cart after a delay
+        setTimeout(() => {
+          navigate('/cart');
+        }, 3000);
       } finally {
         setIsProcessing(false);
       }
     };
 
     processPayment();
-  }, [token, payerId, navigate, toast, clearCart, cartItems]);
+  }, [token, payerId, sessionId, navigate, toast, clearCart, cartItems]);
 
   const handleDownloadAll = () => {
     downloadLinks.forEach((link, index) => {
@@ -188,7 +213,7 @@ const CheckoutSuccess = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Payment Method:</span>
-                    <span className="text-gray-600">PayPal</span>
+                    <span className="text-gray-600 capitalize">{orderDetails.payment_method}</span>
                   </div>
                   {emailSent && (
                     <div className="flex justify-between items-center">
