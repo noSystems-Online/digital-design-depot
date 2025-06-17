@@ -1,13 +1,13 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAllProductsForAdmin, updateProductStatus, deleteProduct, Product } from "@/services/productService";
 import { fetchSellerById } from "@/services/sellerService";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import PayPalConfigManager from "@/components/PayPalConfigManager";
 import ProductDetailsModal from "@/components/ProductDetailsModal";
 import UserManagementTab from "@/components/admin/UserManagementTab";
+import SalesAnalyticsTab from "@/components/admin/SalesAnalyticsTab";
+import AppConfigTab from "@/components/admin/AppConfigTab";
 import {
   Table,
   TableBody,
@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
-import { ChevronUp, ChevronDown, Eye, Users, Search, Filter } from "lucide-react";
+import { ChevronUp, ChevronDown, Eye, users, Search, Filter, dollar-sign, settings } from "lucide-react";
 
 type SortField = 'title' | 'category' | 'price' | 'created_at' | 'is_active' | 'seller_id';
 type SortDirection = 'asc' | 'desc';
@@ -306,13 +306,20 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="products">Product Management</TabsTrigger>
             <TabsTrigger value="users">
-              <Users className="h-4 w-4 mr-2" />
+              <users className="h-4 w-4 mr-2" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="paypal">PayPal Configuration</TabsTrigger>
+            <TabsTrigger value="sales">
+              <dollar-sign className="h-4 w-4 mr-2" />
+              Sales Analytics
+            </TabsTrigger>
+            <TabsTrigger value="config">
+              <settings className="h-4 w-4 mr-2" />
+              App Config
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="products" className="space-y-4">
@@ -497,8 +504,12 @@ const AdminDashboard = () => {
             <UserManagementTab />
           </TabsContent>
           
-          <TabsContent value="paypal">
-            <PayPalConfigManager />
+          <TabsContent value="sales" className="space-y-4">
+            <SalesAnalyticsTab />
+          </TabsContent>
+          
+          <TabsContent value="config">
+            <AppConfigTab />
           </TabsContent>
         </Tabs>
 

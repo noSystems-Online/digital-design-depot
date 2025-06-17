@@ -1,0 +1,199 @@
+
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
+import { dollar-sign, file-text } from "lucide-react";
+
+interface SalesData {
+  id: string;
+  total_amount: number;
+  created_at: string;
+  buyer_email: string;
+  seller_business_name: string;
+  product_titles: string[];
+}
+
+interface SalesStats {
+  totalRevenue: number;
+  totalOrders: number;
+  totalSellers: number;
+  avgOrderValue: number;
+}
+
+const SalesAnalyticsTab = () => {
+  const { data: salesData, isLoading } = useQuery({
+    queryKey: ['salesAnalytics'],
+    queryFn: async () => {
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          total_amount,
+          created_at,
+          profiles!buyer_id (email),
+          order_items (
+            products (
+              title,
+              seller_id,
+              profiles!seller_id (seller_info)
+            )
+          )
+        `)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return orders.map(order => ({
+        id: order.id,
+        total_amount: order.total_amount,
+        created_at: order.created_at,
+        buyer_email: order.profiles?.email || 'Unknown',
+        seller_business_name: order.order_items[0]?.products?.profiles?.seller_info?.businessName || 'Unknown',
+        product_titles: order.order_items.map(item => item.products?.title || 'Unknown Product')
+      })) as SalesData[];
+    },
+  });
+
+  const salesStats: SalesStats = {
+    totalRevenue: salesData?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0,
+    totalOrders: salesData?.length || 0,
+    totalSellers: salesData ? new Set(salesData.map(sale => sale.seller_business_name)).size : 0,
+    avgOrderValue: salesData && salesData.length > 0 ? 
+      salesData.reduce((sum, sale) => sum + sale.total_amount, 0) / salesData.length : 0
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <dollar-sign className="h-4 w-4 mr-2" />
+              Total Revenue
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              ${salesStats.totalRevenue.toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <file-text className="h-4 w-4 mr-2" />
+              Total Orders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {salesStats.totalOrders}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <users className="h-4 w-4 mr-2" />
+              Active Sellers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">
+              {salesStats.totalSellers}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              ${salesStats.avgOrderValue.toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sales Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Sales</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {salesData && salesData.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Buyer</TableHead>
+                    <TableHead>Seller</TableHead>
+                    <TableHead>Products</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salesData.map((sale) => (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-mono text-sm">
+                        {sale.id.slice(0, 8)}...
+                      </TableCell>
+                      <TableCell>{sale.buyer_email}</TableCell>
+                      <TableCell>{sale.seller_business_name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {sale.product_titles.map((title, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {title.length > 20 ? `${title.slice(0, 20)}...` : title}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        ${sale.total_amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(sale.created_at), "MMM dd, yyyy")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No sales data available yet.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default SalesAnalyticsTab;

@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,9 +35,7 @@ const Profile = () => {
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
-    phone: "",
-    country: ""
+    email: ""
   });
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [userStats, setUserStats] = useState({
@@ -74,9 +71,7 @@ const Profile = () => {
         setProfileData({
           firstName: profile.first_name || "",
           lastName: profile.last_name || "",
-          email: profile.email || "",
-          phone: "", // Add phone field to profiles table if needed
-          country: "" // Add country field to profiles table if needed
+          email: profile.email || ""
         });
 
         setUserStats(prev => ({
@@ -454,24 +449,6 @@ const Profile = () => {
                         type="email"
                         value={profileData.email}
                         onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="Not stored yet - add to database schema if needed"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="country">Country</Label>
-                      <Input
-                        id="country"
-                        value={profileData.country}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
-                        placeholder="Not stored yet - add to database schema if needed"
                       />
                     </div>
                     <Button type="submit" className="w-full">

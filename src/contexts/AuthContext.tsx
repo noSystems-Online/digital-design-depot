@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -72,7 +73,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('id', supabaseUser.id)
         .single();
 
-      if (error) {
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create one
+        const firstName = supabaseUser.user_metadata?.full_name?.split(' ')[0] || 
+                         supabaseUser.user_metadata?.first_name || '';
+        const lastName = supabaseUser.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 
+                        supabaseUser.user_metadata?.last_name || '';
+
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+            first_name: firstName,
+            last_name: lastName,
+            roles: ['buyer']
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          setLoading(false);
+          return null;
+        }
+
+        const userData: User = {
+          id: newProfile.id,
+          email: newProfile.email,
+          name: `${newProfile.first_name || ''} ${newProfile.last_name || ''}`.trim() || newProfile.email,
+          roles: newProfile.roles || ['buyer'],
+          sellerStatus: newProfile.seller_status,
+          sellerInfo: newProfile.seller_info as User['sellerInfo']
+        };
+
+        setUser(userData);
+        return userData;
+      } else if (error) {
         console.error('Error fetching profile:', error);
         setLoading(false);
         return null;
