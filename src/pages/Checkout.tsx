@@ -102,18 +102,8 @@ const Checkout = () => {
         const result = await createPayPalOrder(paymentData, formData, cartItems);
 
         if (result.success && result.approvalUrl) {
-          // Open PayPal checkout in a new tab
-          window.open(result.approvalUrl, '_blank');
-          
-          toast({
-            title: "Payment Initiated",
-            description: "Please complete your payment in the PayPal window that opened.",
-          });
-
-          // Navigate to a success/pending page
-          setTimeout(() => {
-            navigate('/profile');
-          }, 3000);
+          // Redirect to PayPal in the same tab instead of opening a new window
+          window.location.href = result.approvalUrl;
         } else {
           throw new Error(result.error || 'PayPal order creation failed');
         }
