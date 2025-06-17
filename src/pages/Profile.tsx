@@ -8,35 +8,237 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { User, Settings, ShoppingBag, Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Purchase {
+  id: string;
+  total_amount: number;
+  created_at: string;
+  status: string;
+  order_items: {
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      id: string;
+      title: string;
+      download_url: string;
+    };
+  }[];
+}
 
 const Profile = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [profileData, setProfileData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    country: "United States"
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    country: ""
   });
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [userStats, setUserStats] = useState({
+    totalPurchases: 0,
+    totalSpent: 0,
+    memberSince: ""
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock user data
-  const userStats = {
-    totalPurchases: 12,
-    totalSpent: 458,
-    memberSince: "January 2023"
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+      fetchPurchases();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      if (profile) {
+        setProfileData({
+          firstName: profile.first_name || "",
+          lastName: profile.last_name || "",
+          email: profile.email || "",
+          phone: "", // Add phone field to profiles table if needed
+          country: "" // Add country field to profiles table if needed
+        });
+
+        setUserStats(prev => ({
+          ...prev,
+          memberSince: new Date(profile.created_at).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long' 
+          })
+        }));
+      }
+    } catch (error) {
+      console.error('Error in fetchUserData:', error);
+    }
   };
 
-  const recentPurchases = [
-    { id: 1, title: "React Dashboard Template", price: 49, date: "2024-01-15", status: "completed" },
-    { id: 2, title: "Node.js API Starter", price: 29, date: "2024-01-10", status: "completed" },
-    { id: 3, title: "Vue.js Components Pack", price: 35, date: "2024-01-05", status: "completed" }
-  ];
+  const fetchPurchases = async () => {
+    if (!user) return;
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+    try {
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          total_amount,
+          created_at,
+          status,
+          order_items (
+            id,
+            quantity,
+            price,
+            products (
+              id,
+              title,
+              download_url
+            )
+          )
+        `)
+        .eq('buyer_id', user.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching purchases:', error);
+        return;
+      }
+
+      if (orders) {
+        const formattedPurchases = orders.map(order => ({
+          id: order.id,
+          total_amount: order.total_amount,
+          created_at: order.created_at,
+          status: order.status,
+          order_items: order.order_items.map(item => ({
+            id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            product: {
+              id: item.products.id,
+              title: item.products.title,
+              download_url: item.products.download_url
+            }
+          }))
+        }));
+
+        setPurchases(formattedPurchases);
+
+        // Calculate user stats
+        const totalPurchases = formattedPurchases.length;
+        const totalSpent = formattedPurchases.reduce((sum, purchase) => sum + purchase.total_amount, 0);
+
+        setUserStats(prev => ({
+          ...prev,
+          totalPurchases,
+          totalSpent
+        }));
+      }
+    } catch (error) {
+      console.error('Error in fetchPurchases:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Saving profile:", profileData);
-    // Handle profile update
+    
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          email: profileData.email
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update Failed",
+        description: "There was an error updating your profile. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
+
+  const handleDownload = async (downloadUrl: string, productTitle: string) => {
+    try {
+      if (!downloadUrl) {
+        toast({
+          title: "Download Unavailable",
+          description: "Download link is not available for this product.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create a temporary link to download the file
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = productTitle;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Download Started",
+        description: `Downloading ${productTitle}...`,
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error downloading the file.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <main className="py-8">
+          <div className="container mx-auto px-4 max-w-4xl text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Please log in to view your profile</h1>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -49,7 +251,7 @@ const Profile = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {profileData.firstName} {profileData.lastName}
+                {profileData.firstName} {profileData.lastName || user.name}
               </h1>
               <p className="text-gray-600">Member since {userStats.memberSince}</p>
             </div>
@@ -78,7 +280,7 @@ const Profile = () => {
                     <CardTitle className="text-lg">Total Spent</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold text-green-600">${userStats.totalSpent}</div>
+                    <div className="text-3xl font-bold text-green-600">${userStats.totalSpent.toFixed(2)}</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -96,20 +298,30 @@ const Profile = () => {
                   <CardTitle>Recent Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentPurchases.slice(0, 3).map((purchase) => (
-                      <div key={purchase.id} className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{purchase.title}</h4>
-                          <p className="text-sm text-gray-600">{purchase.date}</p>
+                  {isLoading ? (
+                    <div className="text-center py-4">Loading...</div>
+                  ) : purchases.length === 0 ? (
+                    <div className="text-center py-4 text-gray-600">No purchases yet</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {purchases.slice(0, 3).map((purchase) => (
+                        <div key={purchase.id} className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">
+                              {purchase.order_items.map(item => item.product.title).join(', ')}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {new Date(purchase.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">${purchase.total_amount.toFixed(2)}</p>
+                            <Badge variant="secondary">{purchase.status}</Badge>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">${purchase.price}</p>
-                          <Badge variant="secondary">{purchase.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -123,22 +335,42 @@ const Profile = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentPurchases.map((purchase) => (
-                      <div key={purchase.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{purchase.title}</h4>
-                          <p className="text-sm text-gray-600">Purchased on {purchase.date}</p>
+                  {isLoading ? (
+                    <div className="text-center py-4">Loading purchases...</div>
+                  ) : purchases.length === 0 ? (
+                    <div className="text-center py-8 text-gray-600">
+                      <ShoppingBag className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p>No purchases yet</p>
+                      <p className="text-sm">Start shopping to see your purchase history here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {purchases.map((purchase) => (
+                        <div key={purchase.id} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="font-medium">Order #{purchase.id.slice(0, 8)}</h4>
+                              <p className="text-sm text-gray-600">
+                                Purchased on {new Date(purchase.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">${purchase.total_amount.toFixed(2)}</p>
+                              <Badge variant="secondary">{purchase.status}</Badge>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            {purchase.order_items.map((item) => (
+                              <div key={item.id} className="flex justify-between items-center text-sm">
+                                <span>{item.product.title} (x{item.quantity})</span>
+                                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">${purchase.price}</p>
-                          <Button variant="outline" size="sm" className="mt-2">
-                            Download Again
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -152,19 +384,37 @@ const Profile = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentPurchases.map((purchase) => (
-                      <div key={purchase.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{purchase.title}</h4>
-                          <p className="text-sm text-gray-600">Last downloaded: Never</p>
-                        </div>
-                        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                          Download
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                  {isLoading ? (
+                    <div className="text-center py-4">Loading downloads...</div>
+                  ) : purchases.length === 0 ? (
+                    <div className="text-center py-8 text-gray-600">
+                      <Download className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p>No downloads available</p>
+                      <p className="text-sm">Purchase products to access downloads here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {purchases.flatMap(purchase => 
+                        purchase.order_items.map(item => (
+                          <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                              <h4 className="font-medium">{item.product.title}</h4>
+                              <p className="text-sm text-gray-600">
+                                Purchased on {new Date(purchase.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button 
+                              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                              onClick={() => handleDownload(item.product.download_url, item.product.title)}
+                              disabled={!item.product.download_url}
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -212,6 +462,7 @@ const Profile = () => {
                         id="phone"
                         value={profileData.phone}
                         onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Not stored yet - add to database schema if needed"
                       />
                     </div>
                     <div>
@@ -220,6 +471,7 @@ const Profile = () => {
                         id="country"
                         value={profileData.country}
                         onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
+                        placeholder="Not stored yet - add to database schema if needed"
                       />
                     </div>
                     <Button type="submit" className="w-full">
