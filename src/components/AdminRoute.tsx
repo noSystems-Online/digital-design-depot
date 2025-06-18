@@ -1,9 +1,13 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Skeleton } from "@/components/ui/skeleton";
 
-const AdminRoute = () => {
+interface AdminRouteProps {
+  children: React.ReactNode;
+}
+
+const AdminRoute = ({ children }: AdminRouteProps) => {
   const { isAdmin, loading } = useAuth();
 
   if (loading) {
@@ -19,7 +23,7 @@ const AdminRoute = () => {
     return <Navigate to="/" replace />;
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default AdminRoute;

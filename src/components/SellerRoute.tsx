@@ -1,9 +1,13 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Skeleton } from "@/components/ui/skeleton";
 
-const SellerRoute = () => {
+interface SellerRouteProps {
+  children: React.ReactNode;
+}
+
+const SellerRoute = ({ children }: SellerRouteProps) => {
   const { isSellerApproved, loading } = useAuth();
 
   if (loading) {
@@ -19,7 +23,7 @@ const SellerRoute = () => {
     return <Navigate to="/sell" replace />;
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default SellerRoute;
