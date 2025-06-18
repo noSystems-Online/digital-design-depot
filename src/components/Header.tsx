@@ -1,3 +1,4 @@
+
 import { ShoppingCart, Search, User, LogIn, LogOut, Store, LayoutDashboard, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,7 @@ const Header = () => {
               Resources
             </Link>
             {!isSeller && !loading && (
-              <Link to="/sell" className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors border border-green-200 px-3 py-1 rounded-full">
+              <Link to="/seller/register" className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors border border-green-200 px-3 py-1 rounded-full">
                 Become a Seller
               </Link>
             )}
@@ -95,7 +96,7 @@ const Header = () => {
                    <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/admin-dashboard" className="flex items-center">
+                      <Link to="/admin" className="flex items-center">
                         <LayoutDashboard className="h-4 w-4 mr-2" />
                         Admin Dashboard
                       </Link>
@@ -106,14 +107,14 @@ const Header = () => {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/sell" className="flex items-center">
+                      <Link to="/seller/register" className="flex items-center">
                         <Store className="h-4 w-4 mr-2" />
                         Seller Settings
                       </Link>
                     </DropdownMenuItem>
                     {isSellerApproved && (
                       <DropdownMenuItem asChild>
-                        <Link to="/seller-dashboard" className="flex items-center">
+                        <Link to="/seller/dashboard" className="flex items-center">
                           <LayoutDashboard className="h-4 w-4 mr-2" />
                           Seller Dashboard
                         </Link>
@@ -125,7 +126,7 @@ const Header = () => {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/sell" className="flex items-center text-green-600">
+                      <Link to="/seller/register" className="flex items-center text-green-600">
                         <Store className="h-4 w-4 mr-2" />
                         Become a Seller
                       </Link>
@@ -155,7 +156,7 @@ const Header = () => {
                 <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {totalItems}
                 </span>
-              )}
+              </div>
             </Button>
           </Link>
         </div>
