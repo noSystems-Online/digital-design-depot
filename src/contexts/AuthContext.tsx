@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -210,10 +208,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      const newRoles = [...user.roles, 'seller'];
+      
       const { error } = await supabase
         .from('profiles')
         .update({
-          roles: [...user.roles, 'seller'],
+          roles: newRoles,
           seller_status: 'pending',
           seller_info: sellerData
         })
@@ -226,7 +226,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update local user state with proper typing
       setUser({
         ...user,
-        roles: [...user.roles, 'seller'],
+        roles: newRoles,
         sellerStatus: 'pending',
         sellerInfo: sellerData
       });
@@ -268,4 +268,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

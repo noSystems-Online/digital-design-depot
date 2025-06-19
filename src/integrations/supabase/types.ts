@@ -410,6 +410,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_user_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       order_status: "pending" | "completed" | "cancelled" | "refunded"
