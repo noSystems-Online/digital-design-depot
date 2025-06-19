@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -67,13 +66,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
-      const { data: profileData, error } = await supabase
+      let { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
-
-      let profile = profileData;
 
       if (error && error.code === 'PGRST116') {
         // Profile doesn't exist, create one
@@ -229,9 +226,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Update local user state
+      const updatedRoles = [...user.roles, 'seller'];
       setUser({
         ...user,
-        roles: [...user.roles, 'seller'] as string[],
+        roles: updatedRoles,
         sellerStatus: 'pending',
         sellerInfo: sellerData
       });
