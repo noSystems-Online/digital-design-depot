@@ -8,6 +8,9 @@ import ProductDetailsModal from "@/components/ProductDetailsModal";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import SalesAnalyticsTab from "@/components/admin/SalesAnalyticsTab";
 import AppConfigTab from "@/components/admin/AppConfigTab";
+import CategoryManagementTab from "@/components/admin/CategoryManagementTab";
+import RoleManagementTab from "@/components/admin/RoleManagementTab";
+import NewsManagementTab from "@/components/admin/NewsManagementTab";
 import {
   Table,
   TableBody,
@@ -34,7 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
-import { ChevronUp, ChevronDown, Eye, Users, Search, Filter, DollarSign, Settings } from "lucide-react";
+import { ChevronUp, ChevronDown, Eye, Users, Search, Filter, DollarSign, Settings, Package, Shield, Newspaper } from "lucide-react";
 
 type SortField = 'title' | 'category' | 'price' | 'created_at' | 'is_active' | 'seller_id';
 type SortDirection = 'asc' | 'desc';
@@ -306,19 +309,27 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="products">Product Management</TabsTrigger>
+            <TabsTrigger value="categories">
+              <Package className="h-4 w-4 mr-2" />
+              Categories
+            </TabsTrigger>
+            <TabsTrigger value="roles">
+              <Shield className="h-4 w-4 mr-2" />
+              Roles
+            </TabsTrigger>
+            <TabsTrigger value="news">
+              <Newspaper className="h-4 w-4 mr-2" />
+              News
+            </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="h-4 w-4 mr-2" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="sales">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Sales Analytics
-            </TabsTrigger>
             <TabsTrigger value="config">
               <Settings className="h-4 w-4 mr-2" />
-              App Config
+              Config
             </TabsTrigger>
           </TabsList>
           
@@ -500,12 +511,20 @@ const AdminDashboard = () => {
             )}
           </TabsContent>
           
-          <TabsContent value="users" className="space-y-4">
-            <UserManagementTab />
+          <TabsContent value="categories" className="space-y-4">
+            <CategoryManagementTab />
           </TabsContent>
           
-          <TabsContent value="sales" className="space-y-4">
-            <SalesAnalyticsTab />
+          <TabsContent value="roles" className="space-y-4">
+            <RoleManagementTab />
+          </TabsContent>
+          
+          <TabsContent value="news" className="space-y-4">
+            <NewsManagementTab />
+          </TabsContent>
+          
+          <TabsContent value="users" className="space-y-4">
+            <UserManagementTab />
           </TabsContent>
           
           <TabsContent value="config">
