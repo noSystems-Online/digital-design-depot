@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -226,10 +227,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Update local user state
-      const updatedRoles = [...user.roles, 'seller'];
       setUser({
         ...user,
-        roles: updatedRoles,
+        roles: [...user.roles, 'seller'],
         sellerStatus: 'pending',
         sellerInfo: sellerData
       });
