@@ -31,7 +31,10 @@ export const fetchRoles = async (): Promise<Role[]> => {
     throw new Error(error.message);
   }
 
-  return data || [];
+  return (data || []).map(item => ({
+    ...item,
+    permissions: item.permissions as Record<string, any>
+  }));
 };
 
 export const createRole = async (role: Omit<Role, 'id' | 'created_at' | 'updated_at'>): Promise<Role> => {
@@ -46,7 +49,10 @@ export const createRole = async (role: Omit<Role, 'id' | 'created_at' | 'updated
     throw new Error(error.message);
   }
 
-  return data;
+  return {
+    ...data,
+    permissions: data.permissions as Record<string, any>
+  };
 };
 
 export const updateRole = async (id: string, updates: Partial<Role>): Promise<Role> => {
@@ -62,7 +68,10 @@ export const updateRole = async (id: string, updates: Partial<Role>): Promise<Ro
     throw new Error(error.message);
   }
 
-  return data;
+  return {
+    ...data,
+    permissions: data.permissions as Record<string, any>
+  };
 };
 
 export const deleteRole = async (id: string): Promise<void> => {
@@ -91,7 +100,13 @@ export const fetchUserRoles = async (): Promise<UserRole[]> => {
     throw new Error(error.message);
   }
 
-  return data || [];
+  return (data || []).map(item => ({
+    ...item,
+    role: {
+      ...item.role,
+      permissions: item.role.permissions as Record<string, any>
+    }
+  }));
 };
 
 export const assignUserRole = async (userId: string, roleId: string): Promise<void> => {

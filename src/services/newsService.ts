@@ -30,7 +30,10 @@ export const fetchFeaturedNews = async (): Promise<SiteNews[]> => {
     throw new Error(error.message);
   }
 
-  return data || [];
+  return (data || []).map(item => ({
+    ...item,
+    type: item.type as 'news' | 'promotion' | 'announcement'
+  }));
 };
 
 export const fetchAllNews = async (): Promise<SiteNews[]> => {
@@ -44,7 +47,10 @@ export const fetchAllNews = async (): Promise<SiteNews[]> => {
     throw new Error(error.message);
   }
 
-  return data || [];
+  return (data || []).map(item => ({
+    ...item,
+    type: item.type as 'news' | 'promotion' | 'announcement'
+  }));
 };
 
 export const createNews = async (news: Omit<SiteNews, 'id' | 'created_at' | 'updated_at'>): Promise<SiteNews> => {
@@ -59,7 +65,10 @@ export const createNews = async (news: Omit<SiteNews, 'id' | 'created_at' | 'upd
     throw new Error(error.message);
   }
 
-  return data;
+  return {
+    ...data,
+    type: data.type as 'news' | 'promotion' | 'announcement'
+  };
 };
 
 export const updateNews = async (id: string, updates: Partial<SiteNews>): Promise<SiteNews> => {
@@ -75,7 +84,10 @@ export const updateNews = async (id: string, updates: Partial<SiteNews>): Promis
     throw new Error(error.message);
   }
 
-  return data;
+  return {
+    ...data,
+    type: data.type as 'news' | 'promotion' | 'announcement'
+  };
 };
 
 export const deleteNews = async (id: string): Promise<void> => {
