@@ -67,11 +67,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
-      const { data: profile, error } = await supabase
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
+
+      let profile = profileData;
 
       if (error && error.code === 'PGRST116') {
         // Profile doesn't exist, create one
@@ -229,7 +231,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update local user state
       setUser({
         ...user,
-        roles: [...user.roles, 'seller'] as ('buyer' | 'seller' | 'admin')[],
+        roles: [...user.roles, 'seller'],
         sellerStatus: 'pending',
         sellerInfo: sellerData
       });
