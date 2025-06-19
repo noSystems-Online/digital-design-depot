@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
-      // Fetch user roles from the new roles system
+      // Fetch user roles from the new roles system - but fallback gracefully if it fails
       let userRoles: string[] = [];
       try {
         const { data: roleData, error: roleError } = await supabase
@@ -120,15 +120,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.error('Error fetching user roles:', roleError);
           // Fallback to profile roles if new system fails
           userRoles = profile.roles || ['buyer'];
+        } else if (roleData && roleData.length > 0) {
+          userRoles = roleData.map(item => item.role?.name).filter(Boolean) || ['buyer'];
         } else {
-          userRoles = roleData?.map(item => item.role.name) || ['buyer'];
-          
-          // If no roles in new system, check old system
-          if (userRoles.length === 0 && profile.roles && profile.roles.length > 0) {
-            userRoles = profile.roles;
-          } else if (userRoles.length === 0) {
-            userRoles = ['buyer'];
-          }
+          // No roles in new system, use old system
+          userRoles = profile.roles || ['buyer'];
         }
       } catch (roleErr) {
         console.error('Error in role fetching:', roleErr);
@@ -227,11 +223,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: error.message };
       }
 
-      // Update local user state with explicitly typed roles array
-      const updatedRoles: string[] = [...user.roles, 'seller'];
+      // Update local user state with proper typing
       setUser({
         ...user,
-        roles: updatedRoles,
+        roles: [...user.roles, 'seller'],
         sellerStatus: 'pending',
         sellerInfo: sellerData
       });
