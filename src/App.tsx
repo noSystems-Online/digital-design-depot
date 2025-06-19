@@ -75,8 +75,13 @@ function App() {
                   </AdminRoute>
                 } />
                 
-                {/* Seller Routes */}
+                {/* Seller Routes - Fixed route paths */}
                 <Route path="/seller/register" element={<SellerRegistration />} />
+                <Route path="/seller-dashboard" element={
+                  <SellerRoute>
+                    <SellerDashboard />
+                  </SellerRoute>
+                } />
                 <Route path="/seller/dashboard" element={
                   <SellerRoute>
                     <SellerDashboard />

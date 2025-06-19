@@ -7,7 +7,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  roles: ('buyer' | 'seller' | 'admin')[];
+  roles: string[];
   sellerStatus?: 'pending' | 'approved' | 'rejected';
   sellerInfo?: {
     businessName: string;
@@ -98,28 +98,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return null;
         }
 
-        const userData: User = {
-          id: newProfile.id,
-          email: newProfile.email,
-          name: `${newProfile.first_name || ''} ${newProfile.last_name || ''}`.trim() || newProfile.email,
-          roles: newProfile.roles || ['buyer'],
-          sellerStatus: newProfile.seller_status,
-          sellerInfo: newProfile.seller_info as User['sellerInfo']
-        };
-
-        setUser(userData);
-        return userData;
+        profile = newProfile;
       } else if (error) {
         console.error('Error fetching profile:', error);
         setLoading(false);
         return null;
       }
 
+      // Fetch user roles from the new roles system
+      let userRoles: string[] = [];
+      try {
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select(`
+            role:roles(name)
+          `)
+          .eq('user_id', supabaseUser.id);
+
+        if (roleError) {
+          console.error('Error fetching user roles:', roleError);
+          // Fallback to profile roles if new system fails
+          userRoles = profile.roles || ['buyer'];
+        } else {
+          userRoles = roleData?.map(item => item.role.name) || ['buyer'];
+          
+          // If no roles in new system, check old system
+          if (userRoles.length === 0 && profile.roles && profile.roles.length > 0) {
+            userRoles = profile.roles;
+          } else if (userRoles.length === 0) {
+            userRoles = ['buyer'];
+          }
+        }
+      } catch (roleErr) {
+        console.error('Error in role fetching:', roleErr);
+        // Fallback to old role system
+        userRoles = profile.roles || ['buyer'];
+      }
+
       const userData: User = {
         id: profile.id,
         email: profile.email,
         name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
-        roles: profile.roles || ['buyer'],
+        roles: userRoles,
         sellerStatus: profile.seller_status,
         sellerInfo: profile.seller_info as User['sellerInfo']
       };
