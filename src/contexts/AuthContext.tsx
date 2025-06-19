@@ -231,7 +231,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update local user state
       setUser({
         ...user,
-        roles: [...user.roles, 'seller'],
+        roles: [...user.roles, 'seller'] as string[],
         sellerStatus: 'pending',
         sellerInfo: sellerData
       });
