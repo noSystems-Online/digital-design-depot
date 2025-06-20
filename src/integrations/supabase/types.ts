@@ -88,6 +88,7 @@ export type Database = {
           created_at: string | null
           id: string
           payment_method: string | null
+          seller_payment_status: string | null
           status: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at: string | null
@@ -98,6 +99,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           payment_method?: string | null
+          seller_payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           payment_method?: string | null
+          seller_payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount?: number
           updated_at?: string | null
@@ -300,6 +303,70 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      seller_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          paid_by: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          seller_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          paid_by?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          seller_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          paid_by?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          seller_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_payments_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_payments_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_news: {
         Row: {

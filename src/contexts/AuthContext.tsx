@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -208,7 +209,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const newRoles = [...user.roles, 'seller'];
+      // Ensure we have valid role strings
+      const currentRoles = user.roles.filter(role => 
+        typeof role === 'string' && 
+        ['buyer', 'seller', 'admin'].includes(role)
+      );
+      
+      const newRoles = [...currentRoles, 'seller'];
       
       const { error } = await supabase
         .from('profiles')

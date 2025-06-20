@@ -309,8 +309,12 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="products">Product Management</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="sales">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Sales
+            </TabsTrigger>
             <TabsTrigger value="categories">
               <Package className="h-4 w-4 mr-2" />
               Categories
@@ -509,6 +513,10 @@ const AdminDashboard = () => {
                 <p className="text-gray-600">No products have been submitted yet.</p>
               </div>
             )}
+          </TabsContent>
+          
+          <TabsContent value="sales" className="space-y-4">
+            <SalesAnalyticsTab />
           </TabsContent>
           
           <TabsContent value="categories" className="space-y-4">

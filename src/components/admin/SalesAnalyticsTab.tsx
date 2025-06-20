@@ -1,19 +1,25 @@
+
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import { DollarSign, FileText, Users } from "lucide-react";
+import { DollarSign, FileText, Users, CreditCard } from "lucide-react";
+import SellerPaymentModal from "./SellerPaymentModal";
 
 interface SalesData {
   id: string;
   total_amount: number;
   created_at: string;
   buyer_email: string;
+  seller_id: string;
   seller_business_name: string;
   product_titles: string[];
+  seller_payment_status: string;
 }
 
 interface SalesStats {
@@ -21,9 +27,18 @@ interface SalesStats {
   totalOrders: number;
   totalSellers: number;
   avgOrderValue: number;
+  pendingPayments: number;
+  totalPaidToSellers: number;
 }
 
 const SalesAnalyticsTab = () => {
+  const [selectedPayment, setSelectedPayment] = useState<{
+    orderId: string;
+    sellerId: string;
+    amount: number;
+    sellerName: string;
+  } | null>(null);
+  
   const { data: salesData, isLoading } = useQuery({
     queryKey: ['salesAnalytics'],
     queryFn: async () => {
@@ -33,6 +48,7 @@ const SalesAnalyticsTab = () => {
           id,
           total_amount,
           created_at,
+          seller_payment_status,
           profiles!buyer_id (email),
           order_items (
             products (
@@ -51,7 +67,9 @@ const SalesAnalyticsTab = () => {
         id: order.id,
         total_amount: order.total_amount,
         created_at: order.created_at,
+        seller_payment_status: order.seller_payment_status || 'pending',
         buyer_email: order.profiles?.email || 'Unknown',
+        seller_id: order.order_items[0]?.products?.seller_id || '',
         seller_business_name: (order.order_items[0]?.products?.profiles?.seller_info as any)?.businessName || 'Unknown',
         product_titles: order.order_items.map(item => item.products?.title || 'Unknown Product')
       })) as SalesData[];
@@ -61,16 +79,28 @@ const SalesAnalyticsTab = () => {
   const salesStats: SalesStats = {
     totalRevenue: salesData?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0,
     totalOrders: salesData?.length || 0,
-    totalSellers: salesData ? new Set(salesData.map(sale => sale.seller_business_name)).size : 0,
+    totalSellers: salesData ? new Set(salesData.map(sale => sale.seller_id)).size : 0,
     avgOrderValue: salesData && salesData.length > 0 ? 
-      salesData.reduce((sum, sale) => sum + sale.total_amount, 0) / salesData.length : 0
+      salesData.reduce((sum, sale) => sum + sale.total_amount, 0) / salesData.length : 0,
+    pendingPayments: salesData?.filter(sale => sale.seller_payment_status === 'pending').length || 0,
+    totalPaidToSellers: salesData?.filter(sale => sale.seller_payment_status === 'paid')
+      .reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+  };
+
+  const handlePaySeller = (sale: SalesData) => {
+    setSelectedPayment({
+      orderId: sale.id,
+      sellerId: sale.seller_id,
+      amount: sale.total_amount,
+      sellerName: sale.seller_business_name
+    });
   };
 
   if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+          {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
@@ -82,7 +112,7 @@ const SalesAnalyticsTab = () => {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
@@ -127,11 +157,36 @@ const SalesAnalyticsTab = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
+            <CardTitle className="text-sm font-medium">Average Order</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
               ${salesStats.avgOrderValue.toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Pending Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {salesStats.pendingPayments}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Paid to Sellers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-teal-600">
+              ${salesStats.totalPaidToSellers.toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -140,7 +195,7 @@ const SalesAnalyticsTab = () => {
       {/* Sales Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Sales</CardTitle>
+          <CardTitle>Recent Sales & Payments</CardTitle>
         </CardHeader>
         <CardContent>
           {salesData && salesData.length > 0 ? (
@@ -153,7 +208,9 @@ const SalesAnalyticsTab = () => {
                     <TableHead>Seller</TableHead>
                     <TableHead>Products</TableHead>
                     <TableHead>Amount</TableHead>
+                    <TableHead>Payment Status</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -177,7 +234,25 @@ const SalesAnalyticsTab = () => {
                         ${sale.total_amount.toFixed(2)}
                       </TableCell>
                       <TableCell>
+                        <Badge 
+                          variant={sale.seller_payment_status === 'paid' ? 'default' : 'destructive'}
+                        >
+                          {sale.seller_payment_status === 'paid' ? 'Paid' : 'Pending'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         {format(new Date(sale.created_at), "MMM dd, yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {sale.seller_payment_status === 'pending' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaySeller(sale)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Pay Seller
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -191,6 +266,18 @@ const SalesAnalyticsTab = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Modal */}
+      {selectedPayment && (
+        <SellerPaymentModal
+          isOpen={!!selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+          orderId={selectedPayment.orderId}
+          sellerId={selectedPayment.sellerId}
+          amount={selectedPayment.amount}
+          sellerName={selectedPayment.sellerName}
+        />
+      )}
     </div>
   );
 };
