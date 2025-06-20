@@ -7,7 +7,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  roles: string[];
+  roles: ('buyer' | 'seller' | 'admin')[];
   sellerStatus?: 'pending' | 'approved' | 'rejected';
   sellerInfo?: {
     businessName: string;
@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Fetch user roles from the new roles system - but fallback gracefully if it fails
-      let userRoles: string[] = [];
+      let userRoles: ('buyer' | 'seller' | 'admin')[] = [];
       try {
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
@@ -118,17 +118,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (roleError) {
           console.error('Error fetching user roles:', roleError);
           // Fallback to profile roles if new system fails
-          userRoles = profile.roles || ['buyer'];
+          userRoles = (profile.roles || ['buyer']).filter((role: string): role is 'buyer' | 'seller' | 'admin' => 
+            ['buyer', 'seller', 'admin'].includes(role)
+          );
         } else if (roleData && roleData.length > 0) {
-          userRoles = roleData.map(item => item.role?.name).filter(Boolean) || ['buyer'];
+          const roleNames = roleData.map(item => item.role?.name).filter(Boolean);
+          userRoles = roleNames.filter((role): role is 'buyer' | 'seller' | 'admin' => 
+            ['buyer', 'seller', 'admin'].includes(role)
+          );
         } else {
           // No roles in new system, use old system
-          userRoles = profile.roles || ['buyer'];
+          userRoles = (profile.roles || ['buyer']).filter((role: string): role is 'buyer' | 'seller' | 'admin' => 
+            ['buyer', 'seller', 'admin'].includes(role)
+          );
         }
       } catch (roleErr) {
         console.error('Error in role fetching:', roleErr);
         // Fallback to old role system
-        userRoles = profile.roles || ['buyer'];
+        userRoles = (profile.roles || ['buyer']).filter((role: string): role is 'buyer' | 'seller' | 'admin' => 
+          ['buyer', 'seller', 'admin'].includes(role)
+        );
       }
 
       const userData: User = {
@@ -209,13 +218,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // Ensure we have valid role strings
-      const currentRoles = user.roles.filter(role => 
-        typeof role === 'string' && 
+      // Ensure we have valid role strings and filter to only valid roles
+      const currentRoles = user.roles.filter((role): role is 'buyer' | 'seller' | 'admin' => 
         ['buyer', 'seller', 'admin'].includes(role)
       );
       
-      const newRoles = [...currentRoles, 'seller'];
+      const newRoles: ('buyer' | 'seller' | 'admin')[] = [...currentRoles];
+      if (!newRoles.includes('seller')) {
+        newRoles.push('seller');
+      }
       
       const { error } = await supabase
         .from('profiles')
