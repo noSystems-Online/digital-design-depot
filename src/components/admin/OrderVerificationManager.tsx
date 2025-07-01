@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Eye, Check, X, DollarSign } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
 
 interface Order {
   id: string;
@@ -47,7 +48,7 @@ const OrderVerificationManager = () => {
         .from('orders')
         .select(`
           *,
-          profiles!buyer_id (email, first_name, last_name),
+          profiles!orders_buyer_id_fkey (email, first_name, last_name),
           payment_gateways (name, type)
         `)
         .eq('verification_status', 'pending')
@@ -62,7 +63,7 @@ const OrderVerificationManager = () => {
     mutationFn: async ({ orderId, approve }: { orderId: string; approve: boolean }) => {
       const updates = {
         verification_status: approve ? 'verified' : 'rejected',
-        status: approve ? 'completed' : 'cancelled',
+        status: (approve ? 'completed' : 'cancelled') as Database['public']['Enums']['order_status'],
         verified_at: new Date().toISOString()
       };
 
@@ -79,6 +80,7 @@ const OrderVerificationManager = () => {
           .from('orders')
           .select(`
             *,
+            profiles!orders_buyer_id_fkey (email),
             order_items (
               products (download_url, title)
             )

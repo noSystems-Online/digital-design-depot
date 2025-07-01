@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Upload, CreditCard, Building, Smartphone } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
+
+type PaymentGatewayRow = Database['public']['Tables']['payment_gateways']['Row'];
 
 interface PaymentGateway {
   id: string;
@@ -55,7 +58,21 @@ const EnhancedCheckout = ({ onPaymentComplete }: EnhancedCheckoutProps) => {
         .order('name');
       
       if (error) throw error;
-      return data as PaymentGateway[];
+      
+      // Transform the data to match our interface
+      return (data as PaymentGatewayRow[]).map(gateway => ({
+        id: gateway.id,
+        name: gateway.name,
+        type: gateway.type as 'online' | 'otc',
+        is_active: gateway.is_active ?? true,
+        config: gateway.config,
+        fees: {
+          fixed: typeof gateway.fees === 'object' && gateway.fees && 'fixed' in gateway.fees 
+            ? Number(gateway.fees.fixed) : 0,
+          percentage: typeof gateway.fees === 'object' && gateway.fees && 'percentage' in gateway.fees 
+            ? Number(gateway.fees.percentage) : 0
+        }
+      })) as PaymentGateway[];
     }
   });
 
@@ -98,7 +115,7 @@ const EnhancedCheckout = ({ onPaymentComplete }: EnhancedCheckoutProps) => {
         gateway_fees: calculatedFees.gatewayFee,
         platform_fees: calculatedFees.platformFee,
         seller_amount: calculatedFees.sellerAmount,
-        status: gateway.type === 'otc' ? 'pending' : 'completed',
+        status: (gateway.type === 'otc' ? 'pending' : 'completed') as Database['public']['Enums']['order_status'],
         verification_status: gateway.type === 'otc' ? 'pending' : 'verified'
       };
 

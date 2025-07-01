@@ -12,6 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Settings } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
+
+type PaymentGatewayRow = Database['public']['Tables']['payment_gateways']['Row'];
 
 interface PaymentGateway {
   id: string;
@@ -40,12 +43,26 @@ const PaymentGatewayManager = () => {
         .order('name');
       
       if (error) throw error;
-      return data as PaymentGateway[];
+      
+      // Transform the data to match our interface
+      return (data as PaymentGatewayRow[]).map(gateway => ({
+        id: gateway.id,
+        name: gateway.name,
+        type: gateway.type as 'online' | 'otc',
+        is_active: gateway.is_active ?? true,
+        config: gateway.config,
+        fees: {
+          fixed: typeof gateway.fees === 'object' && gateway.fees && 'fixed' in gateway.fees 
+            ? Number(gateway.fees.fixed) : 0,
+          percentage: typeof gateway.fees === 'object' && gateway.fees && 'percentage' in gateway.fees 
+            ? Number(gateway.fees.percentage) : 0
+        }
+      })) as PaymentGateway[];
     }
   });
 
   const updateGatewayMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<PaymentGateway> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<PaymentGatewayRow> }) => {
       const { error } = await supabase
         .from('payment_gateways')
         .update(updates)
