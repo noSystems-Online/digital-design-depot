@@ -28,18 +28,7 @@ import {
 } from "@/components/ui/pagination";
 import { Eye, Edit, MoreHorizontal, Check, X } from "lucide-react";
 import { format } from "date-fns";
-
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  category: string;
-  is_active: boolean;
-  seller_id: string;
-  created_at: string;
-  image?: string;
-  description?: string;
-}
+import type { Product } from "@/services/productService";
 
 interface ResponsiveProductTableProps {
   products: Product[];

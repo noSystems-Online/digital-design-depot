@@ -21,7 +21,13 @@ interface PaymentGateway {
   name: string;
   type: 'online' | 'otc';
   is_active: boolean;
-  config: any;
+  config: {
+    api_key?: string;
+    secret_key?: string;
+    public_key?: string;
+    endpoint?: string;
+    [key: string]: any;
+  };
   fees: {
     fixed: number;
     percentage: number;
@@ -50,7 +56,7 @@ const PaymentGatewayManager = () => {
         name: gateway.name,
         type: gateway.type as 'online' | 'otc',
         is_active: gateway.is_active ?? true,
-        config: gateway.config,
+        config: typeof gateway.config === 'object' && gateway.config ? gateway.config as any : {},
         fees: {
           fixed: typeof gateway.fees === 'object' && gateway.fees && 'fixed' in gateway.fees 
             ? Number(gateway.fees.fixed) : 0,
@@ -109,6 +115,13 @@ const PaymentGatewayManager = () => {
       fees: {
         fixed: parseFloat(formData.get('fixedFee') as string) || 0,
         percentage: parseFloat(formData.get('percentageFee') as string) || 0
+      },
+      config: {
+        ...editingGateway.config,
+        api_key: formData.get('apiKey') as string || '',
+        secret_key: formData.get('secretKey') as string || '',
+        public_key: formData.get('publicKey') as string || '',
+        endpoint: formData.get('endpoint') as string || ''
       }
     };
 
@@ -131,52 +144,54 @@ const PaymentGatewayManager = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Fixed Fee</TableHead>
-                <TableHead>Percentage Fee</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {gateways?.map((gateway) => (
-                <TableRow key={gateway.id}>
-                  <TableCell className="font-medium">{gateway.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={gateway.type === 'online' ? 'default' : 'secondary'}>
-                      {gateway.type.toUpperCase()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={gateway.is_active}
-                      onCheckedChange={() => toggleGatewayStatus(gateway.id, gateway.is_active)}
-                    />
-                  </TableCell>
-                  <TableCell>${gateway.fees.fixed}</TableCell>
-                  <TableCell>{gateway.fees.percentage}%</TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditGateway(gateway)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Fixed Fee</TableHead>
+                  <TableHead>Percentage Fee</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {gateways?.map((gateway) => (
+                  <TableRow key={gateway.id}>
+                    <TableCell className="font-medium">{gateway.name}</TableCell>
+                    <TableCell>
+                      <Badge variant={gateway.type === 'online' ? 'default' : 'secondary'}>
+                        {gateway.type.toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={gateway.is_active}
+                        onCheckedChange={() => toggleGatewayStatus(gateway.id, gateway.is_active)}
+                      />
+                    </TableCell>
+                    <TableCell>${gateway.fees.fixed}</TableCell>
+                    <TableCell>{gateway.fees.percentage}%</TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditGateway(gateway)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Payment Gateway</DialogTitle>
           </DialogHeader>
@@ -187,26 +202,78 @@ const PaymentGatewayManager = () => {
                 <Input value={editingGateway.name} disabled />
               </div>
               
-              <div>
-                <Label htmlFor="fixedFee">Fixed Fee ($)</Label>
-                <Input
-                  id="fixedFee"
-                  name="fixedFee"
-                  type="number"
-                  step="0.01"
-                  defaultValue={editingGateway.fees.fixed}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fixedFee">Fixed Fee ($)</Label>
+                  <Input
+                    id="fixedFee"
+                    name="fixedFee"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingGateway.fees.fixed}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="percentageFee">Percentage Fee (%)</Label>
+                  <Input
+                    id="percentageFee"
+                    name="percentageFee"
+                    type="number"
+                    step="0.1"
+                    defaultValue={editingGateway.fees.percentage}
+                  />
+                </div>
               </div>
-              
-              <div>
-                <Label htmlFor="percentageFee">Percentage Fee (%)</Label>
-                <Input
-                  id="percentageFee"
-                  name="percentageFee"
-                  type="number"
-                  step="0.1"
-                  defaultValue={editingGateway.fees.percentage}
-                />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">API Configuration</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="apiKey">API Key</Label>
+                    <Input
+                      id="apiKey"
+                      name="apiKey"
+                      type="password"
+                      defaultValue={editingGateway.config.api_key || ''}
+                      placeholder="Enter API key"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="secretKey">Secret Key</Label>
+                    <Input
+                      id="secretKey"
+                      name="secretKey"
+                      type="password"
+                      defaultValue={editingGateway.config.secret_key || ''}
+                      placeholder="Enter secret key"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="publicKey">Public Key</Label>
+                    <Input
+                      id="publicKey"
+                      name="publicKey"
+                      defaultValue={editingGateway.config.public_key || ''}
+                      placeholder="Enter public key"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="endpoint">API Endpoint</Label>
+                    <Input
+                      id="endpoint"
+                      name="endpoint"
+                      defaultValue={editingGateway.config.endpoint || ''}
+                      placeholder="https://api.example.com"
+                    />
+                  </div>
+                </div>
               </div>
               
               <div className="flex justify-end space-x-2">
