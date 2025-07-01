@@ -15,8 +15,11 @@ import {
   Shield, 
   Wrench,
   Menu,
-  Package
+  Package,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -36,37 +39,73 @@ const sidebarItems = [
   { id: "config", label: "Config", icon: Wrench },
 ];
 
-const SidebarContent = ({ activeTab, onTabChange }: AdminSidebarProps) => (
-  <div className="flex h-full flex-col">
-    <div className="p-6">
-      <h2 className="text-lg font-semibold">Admin Panel</h2>
-    </div>
-    <ScrollArea className="flex-1 px-3">
-      <div className="space-y-1">
-        {sidebarItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Button
-              key={item.id}
-              variant={activeTab === item.id ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start",
-                activeTab === item.id && "bg-secondary"
-              )}
-              onClick={() => onTabChange(item.id)}
-            >
-              <Icon className="mr-2 h-4 w-4" />
-              {item.label}
-            </Button>
-          );
-        })}
+const SidebarContent = ({ activeTab, onTabChange, isCollapsed, onToggleCollapse }: AdminSidebarProps & { isCollapsed: boolean; onToggleCollapse: () => void }) => (
+  <TooltipProvider>
+    <div className="flex h-full flex-col">
+      <div className={cn("p-6 border-b", isCollapsed && "p-4")}>
+        <div className="flex items-center justify-between">
+          {!isCollapsed && <h2 className="text-lg font-semibold">Admin Panel</h2>}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleCollapse}
+            className="hidden md:flex"
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
-    </ScrollArea>
-  </div>
+      
+      <ScrollArea className="flex-1 px-3">
+        <div className="space-y-1 py-2">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            
+            const buttonContent = (
+              <Button
+                key={item.id}
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start",
+                  isActive && "bg-secondary",
+                  isCollapsed && "justify-center px-2"
+                )}
+                onClick={() => onTabChange(item.id)}
+              >
+                <Icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+                {!isCollapsed && item.label}
+              </Button>
+            );
+
+            if (isCollapsed) {
+              return (
+                <Tooltip key={item.id}>
+                  <TooltipTrigger asChild>
+                    {buttonContent}
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return buttonContent;
+          })}
+        </div>
+      </ScrollArea>
+    </div>
+  </TooltipProvider>
 );
 
 const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
   const [open, setOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   return (
     <>
@@ -83,14 +122,24 @@ const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
             onTabChange={(tab) => {
               onTabChange(tab);
               setOpen(false);
-            }} 
+            }}
+            isCollapsed={false}
+            onToggleCollapse={() => {}}
           />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:border-r md:bg-gray-50/50">
-        <SidebarContent activeTab={activeTab} onTabChange={onTabChange} />
+      <div className={cn(
+        "hidden md:flex md:flex-col md:fixed md:inset-y-0 md:border-r md:bg-gray-50/50 transition-all duration-300",
+        isCollapsed ? "md:w-16" : "md:w-64"
+      )}>
+        <SidebarContent 
+          activeTab={activeTab} 
+          onTabChange={onTabChange}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={handleToggleCollapse}
+        />
       </div>
     </>
   );

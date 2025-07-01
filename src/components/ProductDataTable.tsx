@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,89 +113,141 @@ const ProductDataTable = ({ products, onView, onEdit, onToggleStatus }: ProductD
         </div>
       </div>
 
-      {/* Data Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort("title")}
-              >
-                Product {getSortIcon("title")}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort("category")}
-              >
-                Category {getSortIcon("category")}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort("price")}
-              >
-                Price {getSortIcon("price")}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort("sales")}
-              >
-                Sales {getSortIcon("sales")}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort("revenue")}
-              >
-                Revenue {getSortIcon("revenue")}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort("status")}
-              >
-                Status {getSortIcon("status")}
-              </TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedProducts.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.title}</TableCell>
-                <TableCell className="capitalize">{product.category}</TableCell>
-                <TableCell>${product.price}</TableCell>
-                <TableCell>{product.sales}</TableCell>
-                <TableCell>${product.revenue}</TableCell>
-                <TableCell>
+      {/* Desktop Table View */}
+      <div className="hidden lg:block">
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort("title")}
+                >
+                  Product {getSortIcon("title")}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort("category")}
+                >
+                  Category {getSortIcon("category")}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort("price")}
+                >
+                  Price {getSortIcon("price")}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort("sales")}
+                >
+                  Sales {getSortIcon("sales")}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort("revenue")}
+                >
+                  Revenue {getSortIcon("revenue")}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort("status")}
+                >
+                  Status {getSortIcon("status")}
+                </TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedProducts.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.title}</TableCell>
+                  <TableCell className="capitalize">{product.category}</TableCell>
+                  <TableCell>${product.price}</TableCell>
+                  <TableCell>{product.sales}</TableCell>
+                  <TableCell>${product.revenue}</TableCell>
+                  <TableCell>
+                    <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
+                      {product.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-white border shadow-lg z-50">
+                        <DropdownMenuItem onClick={() => onView(product)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onEdit(product)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onToggleStatus(product)}>
+                          {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {paginatedProducts.map((product) => (
+          <Card key={product.id}>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium">{product.title}</h3>
+                    <p className="text-sm text-gray-500 capitalize">{product.category}</p>
+                  </div>
                   <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
                     {product.status}
                   </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-white border shadow-lg z-50">
-                      <DropdownMenuItem onClick={() => onView(product)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEdit(product)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onToggleStatus(product)}>
-                        {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Price:</span>
+                    <span className="ml-2 font-medium">${product.price}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Sales:</span>
+                    <span className="ml-2">{product.sales}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Revenue:</span>
+                    <span className="ml-2 font-medium">${product.revenue}</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <Button size="sm" variant="outline" onClick={() => onView(product)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onEdit(product)}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onToggleStatus(product)}>
+                    {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Pagination */}

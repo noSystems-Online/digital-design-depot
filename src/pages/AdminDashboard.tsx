@@ -45,15 +45,15 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
       
-      <div className="flex">
+      <div className="flex flex-1">
         <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
         {/* Main Content */}
-        <div className="flex-1 md:ml-64">
-          <main className="py-8">
+        <div className="flex-1 md:ml-16 lg:ml-64 transition-all duration-300">
+          <main className="py-8 pb-32">
             <div className="container mx-auto px-4">
               <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>

@@ -35,7 +35,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gray-900 text-white py-16">
+    <footer className="bg-gray-900 text-white py-16 mt-auto">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
@@ -83,7 +83,7 @@ const Footer = () => {
             <p className="text-gray-400 mb-4 text-sm">
               Get the latest products and updates delivered to your inbox.
             </p>
-            <form onSubmit={handleNewsletterSubmit} className="flex space-x-2">
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <Input 
                 type="email"
                 placeholder="Enter your email" 
@@ -94,7 +94,7 @@ const Footer = () => {
               />
               <Button 
                 type="submit"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 whitespace-nowrap"
                 disabled={isSubscribing}
               >
                 {isSubscribing ? "..." : "Subscribe"}
