@@ -8,18 +8,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import { DollarSign, FileText, Users, CreditCard } from "lucide-react";
+import { DollarSign, FileText, Users, CreditCard, TrendingUp, AlertCircle } from "lucide-react";
 import SellerPaymentModal from "./SellerPaymentModal";
 
 interface SalesData {
   id: string;
   total_amount: number;
+  gateway_fees: number;
+  platform_fees: number;
+  seller_amount: number;
   created_at: string;
   buyer_email: string;
   seller_id: string;
   seller_business_name: string;
   product_titles: string[];
   seller_payment_status: string;
+  verification_status: string;
+  payment_method: string;
 }
 
 interface SalesStats {
@@ -29,6 +34,9 @@ interface SalesStats {
   avgOrderValue: number;
   pendingPayments: number;
   totalPaidToSellers: number;
+  totalGatewayFees: number;
+  totalPlatformFees: number;
+  pendingVerification: number;
 }
 
 const SalesAnalyticsTab = () => {
@@ -47,8 +55,13 @@ const SalesAnalyticsTab = () => {
         .select(`
           id,
           total_amount,
+          gateway_fees,
+          platform_fees,
+          seller_amount,
           created_at,
           seller_payment_status,
+          verification_status,
+          payment_method,
           profiles!buyer_id (email),
           order_items (
             products (
@@ -66,8 +79,13 @@ const SalesAnalyticsTab = () => {
       return orders.map(order => ({
         id: order.id,
         total_amount: order.total_amount,
+        gateway_fees: order.gateway_fees || 0,
+        platform_fees: order.platform_fees || 0,
+        seller_amount: order.seller_amount || 0,
         created_at: order.created_at,
         seller_payment_status: order.seller_payment_status || 'pending',
+        verification_status: order.verification_status || 'pending',
+        payment_method: order.payment_method || '',
         buyer_email: order.profiles?.email || 'Unknown',
         seller_id: order.order_items[0]?.products?.seller_id || '',
         seller_business_name: (order.order_items[0]?.products?.profiles?.seller_info as any)?.businessName || 'Unknown',
@@ -84,14 +102,17 @@ const SalesAnalyticsTab = () => {
       salesData.reduce((sum, sale) => sum + sale.total_amount, 0) / salesData.length : 0,
     pendingPayments: salesData?.filter(sale => sale.seller_payment_status === 'pending').length || 0,
     totalPaidToSellers: salesData?.filter(sale => sale.seller_payment_status === 'paid')
-      .reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+      .reduce((sum, sale) => sum + sale.seller_amount, 0) || 0,
+    totalGatewayFees: salesData?.reduce((sum, sale) => sum + sale.gateway_fees, 0) || 0,
+    totalPlatformFees: salesData?.reduce((sum, sale) => sum + sale.platform_fees, 0) || 0,
+    pendingVerification: salesData?.filter(sale => sale.verification_status === 'pending').length || 0,
   };
 
   const handlePaySeller = (sale: SalesData) => {
     setSelectedPayment({
       orderId: sale.id,
       sellerId: sale.seller_id,
-      amount: sale.total_amount,
+      amount: sale.seller_amount,
       sellerName: sale.seller_business_name
     });
   };
@@ -100,7 +121,7 @@ const SalesAnalyticsTab = () => {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(8)].map((_, i) => (
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
@@ -111,8 +132,8 @@ const SalesAnalyticsTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Enhanced Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
@@ -144,24 +165,13 @@ const SalesAnalyticsTab = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              Active Sellers
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Platform Fees
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {salesStats.totalSellers}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Order</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              ${salesStats.avgOrderValue.toFixed(2)}
+              ${salesStats.totalPlatformFees.toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -170,12 +180,26 @@ const SalesAnalyticsTab = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
               <CreditCard className="h-4 w-4 mr-2" />
-              Pending Payments
+              Gateway Fees
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {salesStats.pendingPayments}
+            <div className="text-2xl font-bold text-orange-600">
+              ${salesStats.totalGatewayFees.toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Users className="h-4 w-4 mr-2" />
+              Active Sellers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-indigo-600">
+              {salesStats.totalSellers}
             </div>
           </CardContent>
         </Card>
@@ -190,12 +214,37 @@ const SalesAnalyticsTab = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Pending Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {salesStats.pendingPayments}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-600">
+              ${salesStats.avgOrderValue.toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Sales Table */}
+      {/* Enhanced Sales Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Sales & Payments</CardTitle>
+          <CardTitle>Recent Sales & Payment Management</CardTitle>
         </CardHeader>
         <CardContent>
           {salesData && salesData.length > 0 ? (
@@ -207,7 +256,9 @@ const SalesAnalyticsTab = () => {
                     <TableHead>Buyer</TableHead>
                     <TableHead>Seller</TableHead>
                     <TableHead>Products</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Fees</TableHead>
+                    <TableHead>Seller Amount</TableHead>
                     <TableHead>Payment Status</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Actions</TableHead>
@@ -225,13 +276,20 @@ const SalesAnalyticsTab = () => {
                         <div className="flex flex-wrap gap-1">
                           {sale.product_titles.map((title, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
-                              {title.length > 20 ? `${title.slice(0, 20)}...` : title}
+                              {title.length > 15 ? `${title.slice(0, 15)}...` : title}
                             </Badge>
                           ))}
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">
                         ${sale.total_amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <div>G: ${sale.gateway_fees.toFixed(2)}</div>
+                        <div>P: ${sale.platform_fees.toFixed(2)}</div>
+                      </TableCell>
+                      <TableCell className="font-medium text-green-600">
+                        ${sale.seller_amount.toFixed(2)}
                       </TableCell>
                       <TableCell>
                         <Badge 

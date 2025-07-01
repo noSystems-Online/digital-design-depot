@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analytics_summary: {
+        Row: {
+          active_sellers: number | null
+          created_at: string | null
+          date: string
+          gateway_fees: number | null
+          id: string
+          platform_fees: number | null
+          seller_payouts: number | null
+          total_orders: number | null
+          total_revenue: number | null
+        }
+        Insert: {
+          active_sellers?: number | null
+          created_at?: string | null
+          date: string
+          gateway_fees?: number | null
+          id?: string
+          platform_fees?: number | null
+          seller_payouts?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+        }
+        Update: {
+          active_sellers?: number | null
+          created_at?: string | null
+          date?: string
+          gateway_fees?: number | null
+          id?: string
+          platform_fees?: number | null
+          seller_payouts?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           content: string | null
@@ -86,34 +122,58 @@ export type Database = {
           billing_info: Json | null
           buyer_id: string
           created_at: string | null
+          gateway_fees: number | null
           id: string
+          payment_gateway_id: string | null
           payment_method: string | null
+          payment_proof_url: string | null
+          platform_fees: number | null
+          seller_amount: number | null
           seller_payment_status: string | null
           status: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at: string | null
+          verification_status: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           billing_info?: Json | null
           buyer_id: string
           created_at?: string | null
+          gateway_fees?: number | null
           id?: string
+          payment_gateway_id?: string | null
           payment_method?: string | null
+          payment_proof_url?: string | null
+          platform_fees?: number | null
+          seller_amount?: number | null
           seller_payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           billing_info?: Json | null
           buyer_id?: string
           created_at?: string | null
+          gateway_fees?: number | null
           id?: string
+          payment_gateway_id?: string | null
           payment_method?: string | null
+          payment_proof_url?: string | null
+          platform_fees?: number | null
+          seller_amount?: number | null
           seller_payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount?: number
           updated_at?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -123,7 +183,54 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "orders_payment_gateway_id_fkey"
+            columns: ["payment_gateway_id"]
+            isOneToOne: false
+            referencedRelation: "payment_gateways"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      payment_gateways: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          fees: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          fees?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          fees?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       paypal_config: {
         Row: {
@@ -149,6 +256,30 @@ export type Database = {
           id?: string
           is_active?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json
         }
         Relationships: []
       }
@@ -368,6 +499,66 @@ export type Database = {
           },
         ]
       }
+      seller_payouts: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          order_ids: string[]
+          payout_method: string
+          payout_reference: string | null
+          processed_at: string | null
+          processed_by: string | null
+          seller_id: string
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_ids: string[]
+          payout_method: string
+          payout_reference?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          seller_id: string
+          status?: string | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_ids?: string[]
+          payout_method?: string
+          payout_reference?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          seller_id?: string
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_payouts_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_payouts_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_news: {
         Row: {
           content: string
@@ -461,6 +652,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_order_amounts: {
+        Args: { order_total: number; gateway_id: string }
+        Returns: {
+          gateway_fee: number
+          platform_fee: number
+          seller_amount: number
+        }[]
+      }
       get_all_users_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
