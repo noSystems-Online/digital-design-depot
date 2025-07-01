@@ -1,5 +1,5 @@
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import CategoryManagementTab from "@/components/admin/CategoryManagementTab";
 import NewsManagementTab from "@/components/admin/NewsManagementTab";
@@ -9,68 +9,67 @@ import AppConfigTab from "@/components/admin/AppConfigTab";
 import PaymentGatewayManager from "@/components/admin/PaymentGatewayManager";
 import PlatformSettingsManager from "@/components/admin/PlatformSettingsManager";
 import OrderVerificationManager from "@/components/admin/OrderVerificationManager";
+import ProductManagementTab from "@/components/admin/ProductManagementTab";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState("analytics");
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "analytics":
+        return <SalesAnalyticsTab />;
+      case "verification":
+        return <OrderVerificationManager />;
+      case "products":
+        return <ProductManagementTab />;
+      case "gateways":
+        return <PaymentGatewayManager />;
+      case "settings":
+        return <PlatformSettingsManager />;
+      case "users":
+        return <UserManagementTab />;
+      case "categories":
+        return <CategoryManagementTab />;
+      case "news":
+        return <NewsManagementTab />;
+      case "roles":
+        return <RoleManagementTab />;
+      case "config":
+        return <AppConfigTab />;
+      default:
+        return <SalesAnalyticsTab />;
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="py-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
-          
-          <Tabs defaultValue="analytics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9">
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="verification">Orders</TabsTrigger>
-              <TabsTrigger value="gateways">Payments</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="categories">Categories</TabsTrigger>
-              <TabsTrigger value="news">News</TabsTrigger>
-              <TabsTrigger value="roles">Roles</TabsTrigger>
-              <TabsTrigger value="config">Config</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="analytics" className="space-y-6">
-              <SalesAnalyticsTab />
-            </TabsContent>
-
-            <TabsContent value="verification" className="space-y-6">
-              <OrderVerificationManager />
-            </TabsContent>
-
-            <TabsContent value="gateways" className="space-y-6">
-              <PaymentGatewayManager />
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-6">
-              <PlatformSettingsManager />
-            </TabsContent>
-
-            <TabsContent value="users" className="space-y-6">
-              <UserManagementTab />
-            </TabsContent>
-
-            <TabsContent value="categories" className="space-y-6">
-              <CategoryManagementTab />
-            </TabsContent>
-
-            <TabsContent value="news" className="space-y-6">
-              <NewsManagementTab />
-            </TabsContent>
-
-            <TabsContent value="roles" className="space-y-6">
-              <RoleManagementTab />
-            </TabsContent>
-
-            <TabsContent value="config" className="space-y-6">
-              <AppConfigTab />
-            </TabsContent>
-          </Tabs>
+      
+      <div className="flex">
+        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        {/* Main Content */}
+        <div className="flex-1 md:ml-64">
+          <main className="py-8">
+            <div className="container mx-auto px-4">
+              <div className="flex items-center justify-between mb-8">
+                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                <div className="md:hidden">
+                  <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                {renderTabContent()}
+              </div>
+            </div>
+          </main>
         </div>
-      </main>
+      </div>
+      
       <Footer />
     </div>
   );
