@@ -13,8 +13,9 @@ import { Plus, DollarSign, Package, TrendingUp, Upload, FileText, CheckCircle, E
 import { useState, useEffect } from "react";
 import ProductDataTable from "@/components/ProductDataTable";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchProductsBySeller, updateProductStatus } from "@/services/productService";
+import { fetchProductsBySeller, updateProductStatus, createProduct } from "@/services/productService";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Product {
   id: number;
@@ -31,6 +32,7 @@ interface Product {
 const SellerDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,13 +89,12 @@ const SellerDashboard = () => {
   }, [user?.id, toast]);
 
   const [newProduct, setNewProduct] = useState({
-    appName: "",
+    title: "",
     description: "",
     price: "",
     category: "",
-    imageUrl: "",
-    previewUrl: "",
-    downloadUrl: ""
+    image_url: "",
+    download_url: ""
   });
   const [editProduct, setEditProduct] = useState({
     id: 0,
@@ -109,23 +110,64 @@ const SellerDashboard = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const handleSubmitProduct = (e: React.FormEvent) => {
+  const handleSubmitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("New product submitted:", newProduct);
-    toast({
-      title: "Product Submitted",
-      description: "Your product has been submitted for review",
-    });
-    setIsAddDialogOpen(false);
-    setNewProduct({
-      appName: "",
-      description: "",
-      price: "",
-      category: "",
-      imageUrl: "",
-      previewUrl: "",
-      downloadUrl: ""
-    });
+    
+    if (!user) {
+      toast({ variant: "destructive", title: "You must be logged in to create a product." });
+      return;
+    }
+
+    const productData = {
+      title: newProduct.title,
+      description: newProduct.description,
+      price: parseFloat(newProduct.price),
+      category: newProduct.category as 'software' | 'templates' | 'code-scripts' | 'resources',
+      image_url: newProduct.image_url || undefined,
+      download_url: newProduct.download_url || undefined,
+      seller_id: user.id,
+    };
+
+    console.log("New product submitted:", productData);
+    
+    const result = await createProduct(productData);
+    
+    if (result.success) {
+      toast({
+        title: "Product Submitted",
+        description: "Your product has been submitted for review",
+      });
+      // Refetch products to update the list immediately
+      const fetchedProducts = await fetchProductsBySeller(user.id);
+      const transformedProducts = fetchedProducts.map(product => ({
+        id: parseInt(product.id),
+        title: product.title,
+        price: product.price,
+        sales: 0,
+        revenue: 0,
+        status: product.is_active ? 'active' : 'pending',
+        category: product.category,
+        description: product.description,
+        tags: Array.isArray(product.tags) ? product.tags.join(', ') : ''
+      }));
+      setProducts(transformedProducts);
+      setIsAddDialogOpen(false);
+      setNewProduct({
+        title: "",
+        description: "",
+        price: "",
+        category: "",
+        image_url: "",
+        download_url: ""
+      });
+    } else {
+      console.error("Product submission failed:", result.error);
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "There was an error submitting your product. Please try again.",
+      });
+    }
   };
 
   const handleEditProduct = (e: React.FormEvent) => {
@@ -237,11 +279,11 @@ const SellerDashboard = () => {
                 </DialogHeader>
                 <form onSubmit={handleSubmitProduct} className="space-y-6">
                   <div>
-                    <Label htmlFor="appName">App Name *</Label>
+                    <Label htmlFor="title">Product Title *</Label>
                     <Input
-                      id="appName"
-                      value={newProduct.appName}
-                      onChange={(e) => setNewProduct(prev => ({ ...prev, appName: e.target.value }))}
+                      id="title"
+                      value={newProduct.title}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="e.g., React Dashboard Template"
                       required
                     />
@@ -289,12 +331,12 @@ const SellerDashboard = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="imageUrl">Image URL *</Label>
+                    <Label htmlFor="image_url">Image URL *</Label>
                     <Input
-                      id="imageUrl"
+                      id="image_url"
                       type="url"
-                      value={newProduct.imageUrl}
-                      onChange={(e) => setNewProduct(prev => ({ ...prev, imageUrl: e.target.value }))}
+                      value={newProduct.image_url}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, image_url: e.target.value }))}
                       placeholder="https://example.com/product-image.png"
                       required
                     />
@@ -304,27 +346,12 @@ const SellerDashboard = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="previewUrl">Preview URL *</Label>
+                    <Label htmlFor="download_url">Download URL *</Label>
                     <Input
-                      id="previewUrl"
+                      id="download_url"
                       type="url"
-                      value={newProduct.previewUrl}
-                      onChange={(e) => setNewProduct(prev => ({ ...prev, previewUrl: e.target.value }))}
-                      placeholder="https://example.com/demo"
-                      required
-                    />
-                    <p className="text-sm text-gray-600 mt-1">
-                      URL where users can preview or demo your product
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="downloadUrl">Download URL *</Label>
-                    <Input
-                      id="downloadUrl"
-                      type="url"
-                      value={newProduct.downloadUrl}
-                      onChange={(e) => setNewProduct(prev => ({ ...prev, downloadUrl: e.target.value }))}
+                      value={newProduct.download_url}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, download_url: e.target.value }))}
                       placeholder="https://example.com/download/product.zip"
                       required
                     />
