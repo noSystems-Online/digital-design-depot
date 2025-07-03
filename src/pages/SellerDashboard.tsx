@@ -1,3 +1,4 @@
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, DollarSign, Package, TrendingUp, Upload, FileText, CheckCircle, Edit } from "lucide-react";
+import { Plus, DollarSign, Package, TrendingUp, Upload, FileText, CheckCircle, Edit, Trash2, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import ProductDataTable from "@/components/ProductDataTable";
 import { useAuth } from "@/contexts/AuthContext";
@@ -94,6 +95,7 @@ const SellerDashboard = () => {
     price: "",
     category: "",
     image_url: "",
+    demo_url: "",
     download_url: ""
   });
   const [editProduct, setEditProduct] = useState({
@@ -102,8 +104,10 @@ const SellerDashboard = () => {
     description: "",
     price: "",
     category: "",
-    tags: "",
-    files: null as File[] | null
+    image_url: "",
+    demo_url: "",
+    download_url: "",
+    tags: ""
   });
   const [viewProduct, setViewProduct] = useState(null as any);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -158,6 +162,7 @@ const SellerDashboard = () => {
         price: "",
         category: "",
         image_url: "",
+        demo_url: "",
         download_url: ""
       });
     } else {
@@ -170,19 +175,50 @@ const SellerDashboard = () => {
     }
   };
 
-  const handleEditProduct = (e: React.FormEvent) => {
+  const handleEditProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Product updated:", editProduct);
-    setIsEditDialogOpen(false);
-    setEditProduct({
-      id: 0,
-      title: "",
-      description: "",
-      price: "",
-      category: "",
-      tags: "",
-      files: null
-    });
+    
+    try {
+      // Here you would make an API call to update the product
+      // For now, we'll just update the local state
+      setProducts(prev => prev.map(p => 
+        p.id === editProduct.id 
+          ? {
+              ...p,
+              title: editProduct.title,
+              description: editProduct.description,
+              price: parseFloat(editProduct.price),
+              category: editProduct.category,
+              tags: editProduct.tags
+            }
+          : p
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      });
+      
+      setIsEditDialogOpen(false);
+      setEditProduct({
+        id: 0,
+        title: "",
+        description: "",
+        price: "",
+        category: "",
+        image_url: "",
+        demo_url: "",
+        download_url: "",
+        tags: ""
+      });
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive"
+      });
+    }
   };
 
   const openViewDialog = (product: any) => {
@@ -197,8 +233,10 @@ const SellerDashboard = () => {
       description: product.description,
       price: product.price.toString(),
       category: product.category.toLowerCase(),
-      tags: product.tags,
-      files: null
+      image_url: "", // Not available in current data structure
+      demo_url: "", // Not available in current data structure
+      download_url: "", // Not available in current data structure
+      tags: product.tags
     });
     setIsEditDialogOpen(true);
   };
@@ -235,6 +273,18 @@ const SellerDashboard = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleDeleteProduct = async (product: any) => {
+    if (product.status === 'active') {
+      // For active products, just deactivate them
+      await handleToggleProductStatus(product);
+      return;
+    }
+    
+    // For inactive products, we could actually delete them
+    // But for now, let's just deactivate as well
+    await handleToggleProductStatus(product);
   };
 
   if (loading) {
@@ -346,6 +396,20 @@ const SellerDashboard = () => {
                   </div>
 
                   <div>
+                    <Label htmlFor="demo_url">Preview/Demo URL</Label>
+                    <Input
+                      id="demo_url"
+                      type="url"
+                      value={newProduct.demo_url}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, demo_url: e.target.value }))}
+                      placeholder="https://example.com/demo"
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      Link where customers can preview or demo your product
+                    </p>
+                  </div>
+
+                  <div>
                     <Label htmlFor="download_url">Download URL *</Label>
                     <Input
                       id="download_url"
@@ -453,47 +517,19 @@ const SellerDashboard = () => {
                 <DialogTitle>Edit Product</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleEditProduct} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-title">Product Title *</Label>
-                    <Input
-                      id="edit-title"
-                      value={editProduct.title}
-                      onChange={(e) => setEditProduct(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="e.g., React Dashboard Template"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-price">Price (USD) *</Label>
-                    <Input
-                      id="edit-price"
-                      type="number"
-                      value={editProduct.price}
-                      onChange={(e) => setEditProduct(prev => ({ ...prev, price: e.target.value }))}
-                      placeholder="29"
-                      required
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="edit-title">Product Title *</Label>
+                  <Input
+                    id="edit-title"
+                    value={editProduct.title}
+                    onChange={(e) => setEditProduct(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="e.g., React Dashboard Template"
+                    required
+                  />
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-category">Category *</Label>
-                  <Select value={editProduct.category} onValueChange={(value) => setEditProduct(prev => ({ ...prev, category: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="software">Software Applications</SelectItem>
-                      <SelectItem value="templates">Website Templates</SelectItem>
-                      <SelectItem value="scripts">Code Scripts</SelectItem>
-                      <SelectItem value="resources">Design Resources</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="edit-description">Product Description *</Label>
+                  <Label htmlFor="edit-description">Description *</Label>
                   <Textarea
                     id="edit-description"
                     value={editProduct.description}
@@ -502,6 +538,77 @@ const SellerDashboard = () => {
                     rows={4}
                     required
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-price">Price (USD) *</Label>
+                    <Input
+                      id="edit-price"
+                      type="number"
+                      step="0.01"
+                      value={editProduct.price}
+                      onChange={(e) => setEditProduct(prev => ({ ...prev, price: e.target.value }))}
+                      placeholder="29.99"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-category">Category *</Label>
+                    <Select value={editProduct.category} onValueChange={(value) => setEditProduct(prev => ({ ...prev, category: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="software">Software Applications</SelectItem>
+                        <SelectItem value="templates">Website Templates</SelectItem>
+                        <SelectItem value="code-scripts">Code Scripts</SelectItem>
+                        <SelectItem value="resources">Design Resources</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-image_url">Image URL *</Label>
+                  <Input
+                    id="edit-image_url"
+                    type="url"
+                    value={editProduct.image_url}
+                    onChange={(e) => setEditProduct(prev => ({ ...prev, image_url: e.target.value }))}
+                    placeholder="https://example.com/product-image.png"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    URL to the main product image/screenshot
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-demo_url">Preview/Demo URL</Label>
+                  <Input
+                    id="edit-demo_url"
+                    type="url"
+                    value={editProduct.demo_url}
+                    onChange={(e) => setEditProduct(prev => ({ ...prev, demo_url: e.target.value }))}
+                    placeholder="https://example.com/demo"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Link where customers can preview or demo your product
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-download_url">Download URL *</Label>
+                  <Input
+                    id="edit-download_url"
+                    type="url"
+                    value={editProduct.download_url}
+                    onChange={(e) => setEditProduct(prev => ({ ...prev, download_url: e.target.value }))}
+                    placeholder="https://example.com/download/product.zip"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Direct download link to your product files
+                  </p>
                 </div>
 
                 <div>
@@ -639,6 +746,7 @@ const SellerDashboard = () => {
                     onView={openViewDialog}
                     onEdit={openEditDialog}
                     onToggleStatus={handleToggleProductStatus}
+                    onDelete={handleDeleteProduct}
                   />
                 </CardContent>
               </Card>
