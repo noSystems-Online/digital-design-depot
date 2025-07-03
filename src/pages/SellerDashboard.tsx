@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,7 @@ import { Plus, DollarSign, Package, TrendingUp, Upload, FileText, CheckCircle, E
 import { useState, useEffect } from "react";
 import ProductDataTable from "@/components/ProductDataTable";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchProductsBySeller, updateProductStatus, createProduct } from "@/services/productService";
+import { fetchProductsBySeller, updateProductStatus, createProduct, deleteProduct } from "@/services/productService";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -28,6 +27,9 @@ interface Product {
   category: string;
   description: string;
   tags: string;
+  image_url?: string;
+  download_url?: string;
+  demo_url?: string;
 }
 
 const SellerDashboard = () => {
@@ -70,7 +72,10 @@ const SellerDashboard = () => {
           status: product.is_active ? 'active' : 'pending',
           category: product.category,
           description: product.description,
-          tags: Array.isArray(product.tags) ? product.tags.join(', ') : ''
+          tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
+          image_url: product.image,
+          download_url: product.download_url,
+          demo_url: '' // This field might not exist in DB yet
         }));
         
         setProducts(transformedProducts);
@@ -96,7 +101,8 @@ const SellerDashboard = () => {
     category: "",
     image_url: "",
     demo_url: "",
-    download_url: ""
+    download_url: "",
+    tags: ""
   });
   const [editProduct, setEditProduct] = useState({
     id: 0,
@@ -129,6 +135,7 @@ const SellerDashboard = () => {
       category: newProduct.category as 'software' | 'templates' | 'code-scripts' | 'resources',
       image_url: newProduct.image_url || undefined,
       download_url: newProduct.download_url || undefined,
+      tags: newProduct.tags ? newProduct.tags.split(',').map(tag => tag.trim()) : undefined,
       seller_id: user.id,
     };
 
@@ -152,7 +159,10 @@ const SellerDashboard = () => {
         status: product.is_active ? 'active' : 'pending',
         category: product.category,
         description: product.description,
-        tags: Array.isArray(product.tags) ? product.tags.join(', ') : ''
+        tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
+        image_url: product.image,
+        download_url: product.download_url,
+        demo_url: ''
       }));
       setProducts(transformedProducts);
       setIsAddDialogOpen(false);
@@ -163,7 +173,8 @@ const SellerDashboard = () => {
         category: "",
         image_url: "",
         demo_url: "",
-        download_url: ""
+        download_url: "",
+        tags: ""
       });
     } else {
       console.error("Product submission failed:", result.error);
@@ -189,7 +200,10 @@ const SellerDashboard = () => {
               description: editProduct.description,
               price: parseFloat(editProduct.price),
               category: editProduct.category,
-              tags: editProduct.tags
+              tags: editProduct.tags,
+              image_url: editProduct.image_url,
+              demo_url: editProduct.demo_url,
+              download_url: editProduct.download_url
             }
           : p
       ));
@@ -233,9 +247,9 @@ const SellerDashboard = () => {
       description: product.description,
       price: product.price.toString(),
       category: product.category.toLowerCase(),
-      image_url: "", // Not available in current data structure
-      demo_url: "", // Not available in current data structure
-      download_url: "", // Not available in current data structure
+      image_url: product.image_url || "",
+      demo_url: product.demo_url || "",
+      download_url: product.download_url || "",
       tags: product.tags
     });
     setIsEditDialogOpen(true);
@@ -276,15 +290,39 @@ const SellerDashboard = () => {
   };
 
   const handleDeleteProduct = async (product: any) => {
-    if (product.status === 'active') {
-      // For active products, just deactivate them
-      await handleToggleProductStatus(product);
-      return;
+    try {
+      if (product.status === 'active') {
+        // For active products, just deactivate them
+        await handleToggleProductStatus(product);
+        return;
+      }
+      
+      // For inactive products, actually delete them
+      const result = await deleteProduct(product.id.toString());
+      
+      if (result.success) {
+        // Remove from local state
+        setProducts(prev => prev.filter(p => p.id !== product.id));
+        
+        toast({
+          title: "Success",
+          description: "Product deleted successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete product",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
     }
-    
-    // For inactive products, we could actually delete them
-    // But for now, let's just deactivate as well
-    await handleToggleProductStatus(product);
   };
 
   if (loading) {
@@ -378,6 +416,19 @@ const SellerDashboard = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="tags">Tags (comma separated)</Label>
+                    <Input
+                      id="tags"
+                      value={newProduct.tags}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, tags: e.target.value }))}
+                      placeholder="react, dashboard, admin, template"
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      Comma-separated tags to help users find your product
+                    </p>
                   </div>
 
                   <div>
@@ -491,6 +542,27 @@ const SellerDashboard = () => {
                     <p className="text-gray-600">{viewProduct.tags}</p>
                   </div>
 
+                  {viewProduct.image_url && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Image URL</Label>
+                      <p className="text-blue-600 break-all">{viewProduct.image_url}</p>
+                    </div>
+                  )}
+
+                  {viewProduct.demo_url && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Demo URL</Label>
+                      <p className="text-blue-600 break-all">{viewProduct.demo_url}</p>
+                    </div>
+                  )}
+
+                  {viewProduct.download_url && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Download URL</Label>
+                      <p className="text-blue-600 break-all">{viewProduct.download_url}</p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Total Sales</p>
@@ -570,6 +642,16 @@ const SellerDashboard = () => {
                 </div>
 
                 <div>
+                  <Label htmlFor="edit-tags">Tags (comma separated)</Label>
+                  <Input
+                    id="edit-tags"
+                    value={editProduct.tags}
+                    onChange={(e) => setEditProduct(prev => ({ ...prev, tags: e.target.value }))}
+                    placeholder="react, dashboard, admin, template"
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor="edit-image_url">Image URL *</Label>
                   <Input
                     id="edit-image_url"
@@ -609,16 +691,6 @@ const SellerDashboard = () => {
                   <p className="text-sm text-gray-600 mt-1">
                     Direct download link to your product files
                   </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="edit-tags">Tags (comma separated)</Label>
-                  <Input
-                    id="edit-tags"
-                    value={editProduct.tags}
-                    onChange={(e) => setEditProduct(prev => ({ ...prev, tags: e.target.value }))}
-                    placeholder="react, dashboard, admin, template"
-                  />
                 </div>
 
                 <div className="flex gap-4">
