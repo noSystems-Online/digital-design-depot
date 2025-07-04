@@ -189,25 +189,27 @@ const ProductDataTable = ({ products, onView, onEdit, onToggleStatus, onDelete }
                       </TooltipContent>
                     </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onToggleStatus(product)}
-                          className="h-8 w-8 p-0"
-                        >
-                          {product.status === 'active' ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <ToggleRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{product.status === 'active' ? 'Deactivate product' : 'Activate product'}</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    {product.status !== 'pending' && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onToggleStatus(product)}
+                            className="h-8 w-8 p-0"
+                          >
+                            {product.status === 'active' ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <ToggleRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{product.status === 'active' ? 'Deactivate product' : 'Activate product'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
 
                     {onDelete && (
                       <AlertDialog>
