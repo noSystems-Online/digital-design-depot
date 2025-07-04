@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface Product {
-  id: number;
+  id: string; // Change to string for UUID
   title: string;
   price: number;
   sales: number;

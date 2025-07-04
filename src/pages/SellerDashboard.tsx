@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Product {
-  id: number;
+  id: string; // Change to string for UUID
   title: string;
   price: number;
   sales: number;
@@ -64,7 +64,7 @@ const SellerDashboard = () => {
         
         // Transform the data to match the expected format for the table
         const transformedProducts = fetchedProducts.map(product => ({
-          id: parseInt(product.id),
+          id: product.id, // Keep as string UUID
           title: product.title,
           price: product.price,
           sales: 0, // Mock data for now as we don't have sales tracking yet
@@ -105,7 +105,7 @@ const SellerDashboard = () => {
     tags: ""
   });
   const [editProduct, setEditProduct] = useState({
-    id: 0,
+    id: "",
     title: "",
     description: "",
     price: "",
@@ -151,7 +151,7 @@ const SellerDashboard = () => {
       // Refetch products to update the list immediately
       const fetchedProducts = await fetchProductsBySeller(user.id);
       const transformedProducts = fetchedProducts.map(product => ({
-        id: parseInt(product.id),
+        id: product.id, // Keep as string UUID
         title: product.title,
         price: product.price,
         sales: 0,
@@ -215,7 +215,7 @@ const SellerDashboard = () => {
       
       setIsEditDialogOpen(false);
       setEditProduct({
-        id: 0,
+        id: "",
         title: "",
         description: "",
         price: "",
@@ -258,7 +258,7 @@ const SellerDashboard = () => {
   const handleToggleProductStatus = async (product: any) => {
     try {
       const newStatus = product.status === 'active' ? false : true;
-      const result = await updateProductStatus(product.id.toString(), newStatus);
+      const result = await updateProductStatus(product.id, newStatus);
       
       if (result.success) {
         // Update local state
@@ -298,7 +298,7 @@ const SellerDashboard = () => {
       }
       
       // For inactive products, actually delete them
-      const result = await deleteProduct(product.id.toString());
+      const result = await deleteProduct(product.id);
       
       if (result.success) {
         // Remove from local state

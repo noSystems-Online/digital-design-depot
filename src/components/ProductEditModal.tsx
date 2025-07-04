@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 
 interface Product {
-  id: number;
+  id: string; // Change to string for UUID
   title: string;
   price: number;
   sales: number;

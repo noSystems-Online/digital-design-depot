@@ -14,7 +14,7 @@ import { fetchProductsBySeller, updateProductStatus } from "@/services/productSe
 import { useToast } from "@/hooks/use-toast";
 
 interface Product {
-  id: number;
+  id: string; // Change to string for UUID
   title: string;
   price: number;
   sales: number;
@@ -45,7 +45,7 @@ const NewSellerDashboard = () => {
         
         // Transform the data to match the expected format for the table
         const transformedProducts = fetchedProducts.map(product => ({
-          id: parseInt(product.id),
+          id: product.id, // Keep as string UUID
           title: product.title,
           price: product.price,
           sales: 0, // Mock data for now as we don't have sales tracking yet
@@ -96,7 +96,7 @@ const NewSellerDashboard = () => {
   const handleToggleProductStatus = async (product: Product) => {
     try {
       const newStatus = product.status === 'active' ? false : true;
-      const result = await updateProductStatus(product.id.toString(), newStatus);
+      const result = await updateProductStatus(product.id, newStatus);
       
       if (result.success) {
         // Update local state
@@ -152,6 +152,38 @@ const NewSellerDashboard = () => {
               onView={handleViewProduct}
               onEdit={handleEditProduct}
               onToggleStatus={handleToggleProductStatus}
+              onDelete={async (product) => {
+                if (product.status === 'active') {
+                  // Deactivate active products
+                  await handleToggleProductStatus(product);
+                } else {
+                  // Delete inactive products
+                  try {
+                    const { deleteProduct } = await import('@/services/productService');
+                    const result = await deleteProduct(product.id);
+                    if (result.success) {
+                      setProducts(prev => prev.filter(p => p.id !== product.id));
+                      toast({
+                        title: "Success",
+                        description: "Product deleted successfully",
+                      });
+                    } else {
+                      toast({
+                        title: "Error",
+                        description: "Failed to delete product",
+                        variant: "destructive"
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error deleting product:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to delete product",
+                      variant: "destructive"
+                    });
+                  }
+                }
+              }}
             />
           ) : (
             <p>Please log in to see your dashboard.</p>
