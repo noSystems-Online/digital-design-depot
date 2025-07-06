@@ -45,7 +45,7 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
-      demo_url: product.demo_url,
+      demo_url: product.demo_url || null,
       created_at: product.created_at,
       is_active: product.is_active,
     }));
@@ -82,7 +82,7 @@ export const fetchAllProductsForAdmin = async (): Promise<Product[]> => {
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
-      demo_url: product.demo_url,
+      demo_url: product.demo_url || null,
       created_at: product.created_at,
       is_active: product.is_active,
     }));
@@ -117,7 +117,7 @@ export const fetchPendingProducts = async (): Promise<Product[]> => {
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
-      demo_url: product.demo_url,
+      demo_url: product.demo_url || null,
       created_at: product.created_at,
       is_active: product.is_active,
     }));
@@ -151,7 +151,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
       category: data.category,
       seller_id: data.seller_id,
       download_url: data.download_url,
-      demo_url: data.demo_url,
+      demo_url: data.demo_url || null,
       created_at: data.created_at,
       is_active: data.is_active,
     };
@@ -251,7 +251,7 @@ export const fetchProductsBySeller = async (sellerId: string): Promise<Product[]
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
-      demo_url: product.demo_url,
+      demo_url: product.demo_url || null,
       created_at: product.created_at,
       is_active: product.is_active,
     }));

@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchProducts } from '@/services/productService';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,12 +26,42 @@ interface Product {
 }
 
 interface ProductGridProps {
-  products: Product[];
+  products?: Product[];
+  searchTerm?: string;
+  gradientFrom?: string;
+  gradientTo?: string;
+  category?: string;
 }
 
-const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
+const ProductGrid: React.FC<ProductGridProps> = ({ 
+  products: propProducts, 
+  searchTerm = '',
+  category 
+}) => {
   const { addToCart } = useCart();
   const { toast } = useToast();
+
+  // Fetch products if not provided via props
+  const { data: fetchedProducts, isLoading, error } = useQuery({
+    queryKey: ['products', category],
+    queryFn: () => fetchProducts(category),
+    enabled: !propProducts, // Only fetch if products aren't provided
+  });
+
+  const products = propProducts || fetchedProducts || [];
+
+  // Filter products based on search term
+  const filteredProducts = products.filter(product => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      product.title.toLowerCase().includes(searchLower) ||
+      product.description.toLowerCase().includes(searchLower) ||
+      (product.tags && product.tags.some(tag => 
+        tag.toLowerCase().includes(searchLower)
+      ))
+    );
+  });
 
   const handleAddToCart = (product: Product) => {
     addToCart({
@@ -46,7 +78,30 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     });
   };
 
-  if (products.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="bg-gray-200 rounded-lg h-48 mb-4"></div>
+            <div className="bg-gray-200 rounded h-4 mb-2"></div>
+            <div className="bg-gray-200 rounded h-4 w-3/4"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-semibold text-red-600 mb-2">Error loading products</h3>
+        <p className="text-gray-500">Please try again later.</p>
+      </div>
+    );
+  }
+
+  if (filteredProducts.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold text-gray-600 mb-2">No products found</h3>
@@ -57,7 +112,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {products.map((product) => (
+      {filteredProducts.map((product) => (
         <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200">
           <CardHeader className="p-0">
             <div className="relative overflow-hidden rounded-t-lg">
