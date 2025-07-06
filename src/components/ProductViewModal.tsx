@@ -68,6 +68,16 @@ const ProductViewModal = ({ product, isOpen, onClose }: ProductViewModalProps) =
                   <label className="text-sm font-medium text-gray-600">Price</label>
                   <p className="text-lg font-bold text-green-600">${product.price}</p>
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Demo URL</label>
+                  {product.demo_url ? (
+                    <a href={product.demo_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                      {product.demo_url}
+                    </a>
+                  ) : (
+                    <p className="text-gray-500">No demo URL provided</p>
+                  )}
+                </div>
               </div>
             </div>
 
