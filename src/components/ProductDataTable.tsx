@@ -39,6 +39,7 @@ interface Product {
   category: string;
   description: string;
   tags: string;
+  demo_url?: string;
 }
 
 interface ProductDataTableProps {
@@ -189,29 +190,27 @@ const ProductDataTable = ({ products, onView, onEdit, onToggleStatus, onDelete }
                       </TooltipContent>
                     </Tooltip>
 
-                    {product.status !== 'pending' && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onToggleStatus(product)}
-                            className="h-8 w-8 p-0"
-                          >
-                            {product.status === 'active' ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <ToggleRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{product.status === 'active' ? 'Deactivate product' : 'Activate product'}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onToggleStatus(product)}
+                          className="h-8 w-8 p-0"
+                        >
+                          {product.status === 'active' ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <ToggleRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{product.status === 'active' ? 'Deactivate product' : 'Activate product'}</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                    {onDelete && (
+                    {onDelete && product.status !== 'active' && (
                       <AlertDialog>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -226,28 +225,23 @@ const ProductDataTable = ({ products, onView, onEdit, onToggleStatus, onDelete }
                             </AlertDialogTrigger>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{product.status === 'active' ? 'Deactivate product' : 'Delete product'}</p>
+                            <p>Delete product permanently</p>
                           </TooltipContent>
                         </Tooltip>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {product.status === 'active' ? 'Deactivate Product' : 'Delete Product'}
-                            </AlertDialogTitle>
+                            <AlertDialogTitle>Delete Product</AlertDialogTitle>
                             <AlertDialogDescription>
-                              {product.status === 'active' 
-                                ? 'This product is currently active and cannot be deleted. It will be deactivated instead and hidden from customers.'
-                                : 'Are you sure you want to delete this product? This action cannot be undone.'
-                              }
+                              Are you sure you want to delete this product? This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => onDelete(product)}
-                              className={product.status === 'active' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700'}
+                              className="bg-red-600 hover:bg-red-700"
                             >
-                              {product.status === 'active' ? 'Deactivate' : 'Delete'}
+                              Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

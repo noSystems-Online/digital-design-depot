@@ -23,6 +23,7 @@ interface Product {
   category: string;
   description: string;
   tags: string;
+  demo_url?: string;
 }
 
 const NewSellerDashboard = () => {
@@ -53,7 +54,8 @@ const NewSellerDashboard = () => {
           status: product.is_active ? 'active' : 'pending',
           category: product.category,
           description: product.description,
-          tags: Array.isArray(product.tags) ? product.tags.join(', ') : ''
+          tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
+          demo_url: product.demo_url
         }));
         
         setProducts(transformedProducts);
@@ -153,35 +155,30 @@ const NewSellerDashboard = () => {
               onEdit={handleEditProduct}
               onToggleStatus={handleToggleProductStatus}
               onDelete={async (product) => {
-                if (product.status === 'active') {
-                  // Deactivate active products
-                  await handleToggleProductStatus(product);
-                } else {
-                  // Delete inactive products
-                  try {
-                    const { deleteProduct } = await import('@/services/productService');
-                    const result = await deleteProduct(product.id);
-                    if (result.success) {
-                      setProducts(prev => prev.filter(p => p.id !== product.id));
-                      toast({
-                        title: "Success",
-                        description: "Product deleted successfully",
-                      });
-                    } else {
-                      toast({
-                        title: "Error",
-                        description: "Failed to delete product",
-                        variant: "destructive"
-                      });
-                    }
-                  } catch (error) {
-                    console.error('Error deleting product:', error);
+                // Only delete inactive products - active products are handled by toggle status
+                try {
+                  const { deleteProduct } = await import('@/services/productService');
+                  const result = await deleteProduct(product.id);
+                  if (result.success) {
+                    setProducts(prev => prev.filter(p => p.id !== product.id));
+                    toast({
+                      title: "Success",
+                      description: "Product deleted successfully",
+                    });
+                  } else {
                     toast({
                       title: "Error",
                       description: "Failed to delete product",
                       variant: "destructive"
                     });
                   }
+                } catch (error) {
+                  console.error('Error deleting product:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to delete product",
+                    variant: "destructive"
+                  });
                 }
               }}
             />

@@ -20,6 +20,7 @@ interface Product {
   category: string;
   description: string;
   tags: string;
+  demo_url?: string;
 }
 
 interface ProductViewModalProps {
@@ -127,7 +128,13 @@ const ProductViewModal = ({ product, isOpen, onClose }: ProductViewModalProps) =
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-600">Demo URL</label>
                 <div className="p-3 bg-gray-50 rounded border">
-                  <p className="text-sm text-gray-600 break-all">Not available in current data</p>
+                  {product.demo_url ? (
+                    <a href={product.demo_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+                      {product.demo_url}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-gray-500">No demo URL provided</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
