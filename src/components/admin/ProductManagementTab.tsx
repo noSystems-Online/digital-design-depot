@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { fetchAllProductsForAdmin } from "@/services/productService";
 import type { Product } from "@/services/productService";
 import ResponsiveProductTable from "@/components/ResponsiveProductTable";
+import AdminProductModal from "./AdminProductModal";
 
 const ProductManagementTab = () => {
   const { toast } = useToast();
@@ -15,24 +15,65 @@ const ProductManagementTab = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Fetch products with seller information
   const { data: products, isLoading } = useQuery({
     queryKey: ['allProducts', 'admin'],
-    queryFn: fetchAllProductsForAdmin
+    queryFn: async () => {
+      const products = await fetchAllProductsForAdmin();
+      
+      // Fetch seller information for each product
+      const productsWithSellers = await Promise.all(
+        products.map(async (product) => {
+          try {
+            const { data: seller, error } = await supabase
+              .from('profiles')
+              .select('first_name, last_name, email')
+              .eq('id', product.seller_id)
+              .single();
+
+            if (error) {
+              console.error('Error fetching seller:', error);
+              return product;
+            }
+
+            const sellerName = seller.first_name && seller.last_name 
+              ? `${seller.first_name} ${seller.last_name}`
+              : seller.email;
+
+            return {
+              ...product,
+              seller_name: sellerName
+            };
+          } catch (error) {
+            console.error('Error fetching seller for product:', product.id, error);
+            return product;
+          }
+        })
+      );
+
+      return productsWithSellers;
+    }
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ productId, isActive }: { productId: string; isActive: boolean }) => {
+    mutationFn: async ({ productId, isActive, reason }: { productId: string; isActive: boolean; reason?: string }) => {
       const { error } = await supabase
         .from('products')
         .update({ is_active: isActive })
         .eq('id', productId);
       
       if (error) throw error;
+
+      // TODO: In a real application, you might want to store the reason in a separate table
+      // For now, we'll just log it
+      if (reason) {
+        console.log(`Product ${productId} ${isActive ? 'approved' : 'rejected'} with reason:`, reason);
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_, { isActive }) => {
       toast({
         title: "Success",
-        description: "Product status updated successfully",
+        description: `Product ${isActive ? 'approved' : 'rejected'} successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['allProducts'] });
     },
@@ -50,12 +91,12 @@ const ProductManagementTab = () => {
     setIsDialogOpen(true);
   };
 
-  const handleApproveProduct = (productId: string) => {
-    updateProductMutation.mutate({ productId, isActive: true });
+  const handleApproveProduct = (productId: string, reason?: string) => {
+    updateProductMutation.mutate({ productId, isActive: true, reason });
   };
 
-  const handleRejectProduct = (productId: string) => {
-    updateProductMutation.mutate({ productId, isActive: false });
+  const handleRejectProduct = (productId: string, reason: string) => {
+    updateProductMutation.mutate({ productId, isActive: false, reason });
   };
 
   return (
@@ -69,42 +110,22 @@ const ProductManagementTab = () => {
             products={products || []}
             onView={handleViewProduct}
             onApprove={handleApproveProduct}
-            onReject={handleRejectProduct}
+            onReject={(productId) => handleRejectProduct(productId, "Rejected by admin")}
             isLoading={isLoading}
           />
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Product Details</DialogTitle>
-          </DialogHeader>
-          {selectedProduct && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <img 
-                    src={selectedProduct.image} 
-                    alt={selectedProduct.title}
-                    className="w-full h-48 object-cover rounded"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-bold text-lg">{selectedProduct.title}</h3>
-                  <p className="text-sm text-gray-600">{selectedProduct.description}</p>
-                  <div className="space-y-1">
-                    <p><strong>Price:</strong> ${selectedProduct.price.toFixed(2)}</p>
-                    <p><strong>Category:</strong> {selectedProduct.category}</p>
-                    <p><strong>Status:</strong> {selectedProduct.is_active ? "Active" : "Inactive"}</p>
-                    <p><strong>Seller ID:</strong> {selectedProduct.seller_id}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AdminProductModal
+        product={selectedProduct}
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setSelectedProduct(null);
+        }}
+        onApprove={handleApproveProduct}
+        onReject={handleRejectProduct}
+      />
     </div>
   );
 };

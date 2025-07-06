@@ -3,17 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 export interface Product {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   price: number;
-  rating: number;
-  reviews: number;
-  image: string;
-  tags: string[];
-  category: 'software' | 'templates' | 'code-scripts' | 'resources';
+  category: string;
+  image: string | null;
+  download_url: string | null;
   seller_id: string;
-  download_url?: string;
+  seller_name?: string; // Optional field for seller name
+  is_active: boolean;
+  tags: string[] | null;
   created_at: string;
-  is_active?: boolean;
 }
 
 export const fetchProducts = async (category?: string): Promise<Product[]> => {
