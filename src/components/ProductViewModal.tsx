@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
 interface Product {
-  id: string; // Change to string for UUID
+  id: string;
   title: string;
   price: number;
   sales: number;

@@ -8,6 +8,7 @@ export interface Product {
   category: string;
   image: string | null;
   download_url: string | null;
+  demo_url: string | null;
   seller_id: string;
   seller_name?: string; // Optional field for seller name
   is_active: boolean;
@@ -39,13 +40,12 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
       title: product.title,
       description: product.description || '',
       price: parseFloat(product.price.toString()),
-      rating: 4.5, // Default rating since we don't have reviews yet
-      reviews: 0, // Default reviews count
       image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
       tags: product.tags || [],
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
+      demo_url: product.demo_url,
       created_at: product.created_at,
       is_active: product.is_active,
     }));
@@ -77,13 +77,12 @@ export const fetchAllProductsForAdmin = async (): Promise<Product[]> => {
       title: product.title,
       description: product.description || '',
       price: parseFloat(product.price.toString()),
-      rating: 4.5, // Default rating since we don't have reviews yet
-      reviews: 0, // Default reviews count
       image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
       tags: product.tags || [],
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
+      demo_url: product.demo_url,
       created_at: product.created_at,
       is_active: product.is_active,
     }));
@@ -113,13 +112,12 @@ export const fetchPendingProducts = async (): Promise<Product[]> => {
       title: product.title,
       description: product.description || '',
       price: parseFloat(product.price.toString()),
-      rating: 4.5, // Default rating since we don't have reviews yet
-      reviews: 0, // Default reviews count
       image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
       tags: product.tags || [],
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
+      demo_url: product.demo_url,
       created_at: product.created_at,
       is_active: product.is_active,
     }));
@@ -148,13 +146,12 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
       title: data.title,
       description: data.description || '',
       price: parseFloat(data.price.toString()),
-      rating: 4.5,
-      reviews: 0,
       image: data.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
       tags: data.tags || [],
       category: data.category,
       seller_id: data.seller_id,
       download_url: data.download_url,
+      demo_url: data.demo_url,
       created_at: data.created_at,
       is_active: data.is_active,
     };
@@ -209,6 +206,7 @@ export interface ProductCreationData {
   price: number;
   image_url?: string;
   download_url?: string;
+  demo_url?: string;
   tags?: string[];
   seller_id: string;
 }
@@ -248,13 +246,12 @@ export const fetchProductsBySeller = async (sellerId: string): Promise<Product[]
       title: product.title,
       description: product.description || '',
       price: parseFloat(product.price.toString()),
-      rating: 4.5,
-      reviews: 0,
       image: product.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
       tags: product.tags || [],
       category: product.category,
       seller_id: product.seller_id,
       download_url: product.download_url,
+      demo_url: product.demo_url,
       created_at: product.created_at,
       is_active: product.is_active,
     }));

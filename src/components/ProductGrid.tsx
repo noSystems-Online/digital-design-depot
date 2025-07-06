@@ -1,155 +1,125 @@
 
-import { useState, useMemo, useEffect } from "react";
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, ShoppingCart } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
+import { Button } from "@/components/ui/button";
+import { useCart } from '@/contexts/CartContext';
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
-import { Product, fetchProducts } from "@/services/productService";
+import { Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-interface ProductGridProps {
-  searchTerm: string;
-  gradientFrom: string;
-  gradientTo: string;
-  itemsPerPage?: number | string;
-  category?: string;
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image?: string;
+  tags?: string[];
+  category: string;
+  seller_id?: string;
+  download_url?: string;
+  demo_url?: string;
+  created_at?: string;
+  is_active?: boolean;
 }
 
-const ProductGrid = ({ searchTerm, gradientFrom, gradientTo, itemsPerPage = 8, category }: ProductGridProps) => {
-  // Ensure itemsPerPage is always a number
-  const itemsPerPageNumber = typeof itemsPerPage === 'string' ? parseInt(itemsPerPage, 10) || 8 : Number(itemsPerPage) || 8;
-  const [displayCount, setDisplayCount] = useState<number>(itemsPerPageNumber);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ProductGridProps {
+  products: Product[];
+}
+
+const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const { addToCart } = useCart();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      setLoading(true);
-      const fetchedProducts = await fetchProducts(category);
-      setProducts(fetchedProducts);
-      setLoading(false);
-    };
-
-    loadProducts();
-  }, [category]);
-
-  const filteredProducts = useMemo(() => {
-    return products.filter(product =>
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  }, [products, searchTerm]);
-
-  const displayedProducts = filteredProducts.slice(0, displayCount);
-  const hasMore = displayCount < filteredProducts.length;
-
-  const loadMore = () => {
-    const increment = itemsPerPageNumber;
-    setDisplayCount(prev => Math.min(prev + increment, filteredProducts.length));
-  };
 
   const handleAddToCart = (product: Product) => {
     addToCart({
       id: product.id,
       title: product.title,
       price: product.price,
-      image: product.image,
+      image: product.image || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
       category: product.category
     });
     
     toast({
-      title: "Added to cart!",
+      title: "Added to Cart",
       description: `${product.title} has been added to your cart.`,
     });
   };
 
-  if (loading) {
+  if (products.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <div className="h-48 bg-gray-200 rounded-t-lg"></div>
-            <CardContent className="p-6">
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded mb-4"></div>
-              <div className="h-8 bg-gray-200 rounded"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="text-center py-12">
+        <h3 className="text-lg font-semibold text-gray-600 mb-2">No products found</h3>
+        <p className="text-gray-500">Try adjusting your search or browse different categories.</p>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {displayedProducts.map((product) => (
-          <Card key={product.id} className="group hover:shadow-xl transition-all duration-300">
-            <CardHeader className="p-0">
-              <Link to={`/product/${product.id}`}>
-                <div className={`h-48 bg-gradient-to-br ${gradientFrom} ${gradientTo} rounded-t-lg flex items-center justify-center cursor-pointer`}>
-                  <img src={product.image} alt={product.title} className="w-full h-full object-cover rounded-t-lg" />
-                </div>
-              </Link>
-            </CardHeader>
-            <CardContent className="p-6">
-              <Link to={`/product/${product.id}`}>
-                <CardTitle className="text-lg mb-2 group-hover:text-blue-600 transition-colors cursor-pointer">
-                  {product.title}
-                </CardTitle>
-              </Link>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {product.description}
-              </p>
-              <div className="flex items-center mb-3">
-                <div className="flex items-center">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm text-gray-600 ml-1">{product.rating}</span>
-                  <span className="text-sm text-gray-400 ml-1">({product.reviews})</span>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {products.map((product) => (
+        <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200">
+          <CardHeader className="p-0">
+            <div className="relative overflow-hidden rounded-t-lg">
+              <img
+                src={product.image || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop'}
+                alt={product.title}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+              />
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="capitalize">
+                  {product.category.replace('-', ' ')}
+                </Badge>
               </div>
-              <div className="flex flex-wrap gap-1 mb-4">
-                {product.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
+              <Link 
+                to={`/product/${product.id}`}
+                className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100"
+              >
+                <Button variant="secondary" size="sm" className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  View Details
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4">
+            <CardTitle className="text-lg mb-2 line-clamp-2 min-h-[3.5rem]">
+              {product.title}
+            </CardTitle>
+            <p className="text-sm text-gray-600 mb-3 line-clamp-2 min-h-[2.5rem]">
+              {product.description}
+            </p>
+            
+            {product.tags && product.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {product.tags.slice(0, 3).map((tag, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
+                {product.tags.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{product.tags.length - 3} more
+                  </Badge>
+                )}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-blue-600">${product.price}</span>
-                <Button 
-                  size="sm" 
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-1" />
-                  Add to Cart
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-      {hasMore && (
-        <div className="text-center mt-8">
-          <Button onClick={loadMore} variant="outline" size="lg">
-            Load More Products ({filteredProducts.length - displayCount} remaining)
-          </Button>
-        </div>
-      )}
-      
-      {filteredProducts.length === 0 && searchTerm && !loading && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No products found matching "{searchTerm}"</p>
-        </div>
-      )}
-    </>
+            )}
+            
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-green-600">
+                ${product.price.toFixed(2)}
+              </span>
+              <Button 
+                onClick={() => handleAddToCart(product)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Add to Cart
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
 

@@ -155,12 +155,20 @@ const AdminProductModal = ({
           {/* URLs */}
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Product URLs</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-600">Image URL</label>
                 <div className="p-3 bg-gray-50 rounded border">
                   <p className="text-sm text-gray-600 break-all">
                     {product.image || 'Not provided'}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-600">Demo URL</label>
+                <div className="p-3 bg-gray-50 rounded border">
+                  <p className="text-sm text-gray-600 break-all">
+                    {product.demo_url || 'Not provided'}
                   </p>
                 </div>
               </div>
